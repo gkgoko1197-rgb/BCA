@@ -1,24 +1,33 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import type { Employee } from "@/lib/data";
+import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function AdminAttendancePage() {
     const [month, setMonth] = useState<Date>(new Date());
     const [attendanceData, setAttendanceData] = useState<{ [key: string]: string[] }>({});
     const [employees, setEmployees] = useState<Employee[]>([]);
-    const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+    
+    // For the dialog
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [selectedDateForDialog, setSelectedDateForDialog] = useState<Date | undefined>();
     const [selectedAbsentees, setSelectedAbsentees] = useState<string[]>([]);
+
+    // For the "Mark Attendance" card
+    const [dateForMarking, setDateForMarking] = useState<Date | undefined>(new Date());
+    
     const { toast } = useToast();
 
     useEffect(() => {
@@ -28,23 +37,22 @@ export default function AdminAttendancePage() {
         setEmployees(storedEmployees);
     }, []);
 
-    const absentDays = Object.keys(attendanceData).map(dateStr => new Date(dateStr));
-    const absentModifiers = { absent: absentDays };
-    const absentModifiersClassNames = {
-        absent: 'bg-destructive/20 text-destructive-foreground rounded-md',
-    };
-    
-    const handleDayClick = (date: Date) => {
+    const getAvatar = (emp: Employee) => {
+        const placeholder = PlaceHolderImages.find(p => p.id === emp.profileImage);
+        return placeholder?.imageUrl || `https://picsum.photos/seed/${emp.employeeId}/400/400`;
+    }
+
+    const openAttendanceDialog = (date: Date) => {
         const dateString = format(date, 'yyyy-MM-dd');
-        setSelectedDate(date);
+        setSelectedDateForDialog(date);
         setSelectedAbsentees(attendanceData[dateString] || []);
         setIsDialogOpen(true);
     };
 
     const handleSaveAttendance = () => {
-        if (!selectedDate) return;
+        if (!selectedDateForDialog) return;
 
-        const dateString = format(selectedDate, 'yyyy-MM-dd');
+        const dateString = format(selectedDateForDialog, 'yyyy-MM-dd');
         const updatedAttendance = { ...attendanceData };
 
         if (selectedAbsentees.length > 0) {
@@ -59,93 +67,129 @@ export default function AdminAttendancePage() {
         toast({ title: "Success", description: "Attendance record updated." });
     };
 
-    const DayWithTooltip = ({ date }: { date: Date }) => {
+    const DayWithAvatars = ({ date }: { date: Date }) => {
         const dateString = format(date, 'yyyy-MM-dd');
-        const absentEmployeesForDay = attendanceData[dateString];
-
-        const dayDiv = (
-            <div className="w-full h-full flex items-center justify-center cursor-pointer" onClick={() => handleDayClick(date)}>
-                {format(date, 'd')}
-            </div>
-        );
-
-        if (!absentEmployeesForDay || absentEmployeesForDay.length === 0) {
-            return dayDiv;
-        }
+        const absentEmployeeIds = attendanceData[dateString] || [];
+        const absentEmployees = absentEmployeeIds.map(id => employees.find(e => e.employeeId === id)).filter(Boolean) as Employee[];
 
         return (
-            <TooltipProvider delayDuration={100}>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        {dayDiv}
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <div className="space-y-1 p-1">
-                            <p className="font-bold text-sm">Absent on {format(date, 'MMM d')}:</p>
-                            <div className="flex flex-wrap gap-1 max-w-xs">
-                                {absentEmployeesForDay.map(id => <Badge key={id} variant="secondary">{id}</Badge>)}
-                            </div>
-                        </div>
-                    </TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
+            <div className="relative w-full h-full flex items-center justify-center cursor-pointer" onClick={() => openAttendanceDialog(date)}>
+                {format(date, 'd')}
+                {absentEmployees.length > 0 && (
+                    <div className="absolute bottom-1 flex -space-x-2">
+                        {absentEmployees.slice(0, 2).map(emp => (
+                             <Avatar key={emp.id} className="h-5 w-5 border-2 border-background">
+                                <AvatarImage src={getAvatar(emp)} alt={emp.name} />
+                                <AvatarFallback>{emp.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                        ))}
+                        {absentEmployees.length > 2 && (
+                             <Avatar className="h-5 w-5 border-2 border-background">
+                                <AvatarFallback className="text-[10px] bg-muted-foreground text-white">+{absentEmployees.length - 2}</AvatarFallback>
+                            </Avatar>
+                        )}
+                    </div>
+                )}
+            </div>
         );
     };
     
     const todayString = format(new Date(), 'yyyy-MM-dd');
-    const absenteesToday = attendanceData[todayString] || [];
-    const totalEmployees = employees.length;
-    const absentTodayCount = absenteesToday.length;
-    const presentTodayCount = totalEmployees > 0 ? totalEmployees - absentTodayCount : 0;
+    const absenteesTodayIds = attendanceData[todayString] || [];
+    const absenteesToday = absenteesTodayIds.map(id => employees.find(e => e.employeeId === id)).filter(Boolean) as Employee[];
 
     return (
         <>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card className="lg:col-span-2">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+                <Card className="xl:col-span-2">
                     <CardHeader>
-                        <CardTitle>Attendance Calendar (1 Year)</CardTitle>
-                        <CardDescription>Overview of employee attendance. Dates with absences are highlighted. Click a date to mark attendance.</CardDescription>
+                        <CardTitle>Attendance Calendar</CardTitle>
+                        <CardDescription>Click on a date to mark attendance. Avatars show absent employees.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Calendar
-                            numberOfMonths={12}
                             month={month}
                             onMonthChange={setMonth}
-                            pagedNavigation
-                            modifiers={absentModifiers}
-                            modifiersClassNames={absentModifiersClassNames}
+                            modifiers={{ absent: Object.keys(attendanceData).map(d => new Date(d)) }}
+                            modifiersClassNames={{ absent: 'font-bold' }}
                             className="w-full"
                             components={{
-                                DayContent: DayWithTooltip
+                                DayContent: DayWithAvatars
                             }}
                         />
                     </CardContent>
                 </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Summary</CardTitle>
-                        <CardDescription>Key attendance metrics.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex justify-between items-center p-4 rounded-lg bg-green-100 dark:bg-green-900/50">
-                            <span className="font-medium">Total Employees Present Today</span>
-                            <span className="text-2xl font-bold text-green-600 dark:text-green-400">{presentTodayCount}</span>
-                        </div>
-                        <div className="flex justify-between items-center p-4 rounded-lg bg-red-100 dark:bg-red-900/50">
-                            <span className="font-medium">Total Employees Absent Today</span>
-                            <span className="text-2xl font-bold text-red-600 dark:text-red-400">{absentTodayCount}</span>
-                        </div>
-                        <div className="text-sm text-muted-foreground pt-4">
-                            <p>This summary is for today. The calendar reflects all recorded absences.</p>
-                        </div>
-                    </CardContent>
-                </Card>
+                <div className="space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Today's Absentees</CardTitle>
+                            <CardDescription>Employees marked absent for {format(new Date(), 'PPP')}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {absenteesToday.length > 0 ? (
+                                <div className="space-y-4 max-h-60 overflow-y-auto pr-2">
+                                    {absenteesToday.map(emp => (
+                                        <div key={emp.id} className="flex items-center gap-4">
+                                            <Avatar>
+                                                <AvatarImage src={getAvatar(emp)} alt={emp.name} data-ai-hint="profile portrait" />
+                                                <AvatarFallback>{emp.name.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <p className="font-medium">{emp.name}</p>
+                                                <p className="text-sm text-muted-foreground">{emp.employeeId}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center text-muted-foreground py-10">
+                                    <p>Everyone is present today!</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Mark Daily Attendance</CardTitle>
+                            <CardDescription>Select a date and mark employee attendance.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-full justify-start text-left font-normal",
+                                        !dateForMarking && "text-muted-foreground"
+                                    )}
+                                    >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dateForMarking ? format(dateForMarking, "PPP") : <span>Pick a date</span>}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                    <Calendar
+                                        mode="single"
+                                        selected={dateForMarking}
+                                        onSelect={setDateForMarking}
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                        </CardContent>
+                        <CardFooter>
+                            <Button className="w-full" onClick={() => dateForMarking && openAttendanceDialog(dateForMarking)} disabled={!dateForMarking}>
+                                Mark Attendance
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                </div>
             </div>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Mark Attendance for {selectedDate && format(selectedDate, 'PPP')}</DialogTitle>
+                        <DialogTitle>Mark Attendance for {selectedDateForDialog && format(selectedDateForDialog, 'PPP')}</DialogTitle>
                         <DialogDescription>Select the employees who were absent on this day.</DialogDescription>
                     </DialogHeader>
                     <div className="max-h-[300px] overflow-y-auto pr-4 space-y-3 py-2">
