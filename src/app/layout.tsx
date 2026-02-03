@@ -24,10 +24,7 @@ export default function RootLayout({
       </head>
       <body className={`font-body antialiased`}>
         <ThemeProvider
-            attribute="class"
             defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
         >
             {children}
             <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
