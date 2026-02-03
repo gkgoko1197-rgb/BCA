@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Employee } from "@/lib/data";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, FileText, Download, Building, User, Banknote, Scissors } from "lucide-react";
+import { ArrowUpDown, FileText, Download, Building, User, Banknote, Scissors, Pencil } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +31,8 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { generatePayslipDataForEmployee, type DetailedPayslipData } from "@/lib/payslip";
@@ -47,6 +49,11 @@ export default function AdminEmployeePage() {
     setSelectedEmployeeForPayslip,
   ] = useState<Employee | null>(null);
   const [payslipData, setPayslipData] = useState<DetailedPayslipData | null>(null);
+
+  // States for editing employee
+  const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
+  const [editedData, setEditedData] = useState<Partial<Employee>>({});
+
   const { toast } = useToast();
 
   useEffect(() => {
@@ -122,6 +129,38 @@ export default function AdminEmployeePage() {
       style: "currency",
       currency: "INR",
     }).format(amount);
+
+  // Edit handlers
+  const handleOpenEditDialog = (employee: Employee) => {
+      setEmployeeToEdit(employee);
+      setEditedData(employee);
+      setSelectedEmployeeForPayslip(null); // Close payslip dialog
+  };
+
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { name, value } = e.target;
+      setEditedData(prev => ({...prev, [name]: value}));
+  };
+
+  const handleSaveChanges = () => {
+      if (!employeeToEdit) return;
+
+      const allEmployees: Employee[] = JSON.parse(localStorage.getItem("employees") || "[]");
+      const updatedEmployees = allEmployees.map(emp =>
+          emp.id === employeeToEdit.id ? { ...employeeToEdit, ...editedData } as Employee : emp
+      );
+      
+      localStorage.setItem('employees', JSON.stringify(updatedEmployees));
+      setEmployees(updatedEmployees);
+      
+      toast({
+          title: "Success",
+          description: "Employee information has been updated.",
+      });
+      
+      setEmployeeToEdit(null);
+      window.dispatchEvent(new Event('storage'));
+  };
 
   return (
     <>
@@ -255,11 +294,53 @@ export default function AdminEmployeePage() {
                 <Download className="mr-2 h-4 w-4" />
                 TXT
                 </Button>
+                <Button variant="secondary" onClick={() => handleOpenEditDialog(selectedEmployeeForPayslip!)}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit
+                </Button>
                 <DialogClose asChild>
                 <Button variant="ghost">Close</Button>
                 </DialogClose>
             </div>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Employee Dialog */}
+      <Dialog open={!!employeeToEdit} onOpenChange={(isOpen) => !isOpen && setEmployeeToEdit(null)}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Edit: {employeeToEdit?.name}</DialogTitle>
+                <DialogDescription>
+                    Update employee details below.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+                 <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="name" className="text-right">Name</Label>
+                    <Input id="name" name="name" value={editedData.name || ''} onChange={handleEditInputChange} className="col-span-3" />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="designation" className="text-right">Designation</Label>
+                    <Input id="designation" name="designation" value={editedData.designation || ''} onChange={handleEditInputChange} className="col-span-3" />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="email" className="text-right">Email</Label>
+                    <Input id="email" name="email" type="email" value={editedData.email || ''} onChange={handleEditInputChange} className="col-span-3" />
+                </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="phone" className="text-right">Phone</Label>
+                    <Input id="phone" name="phone" value={editedData.phone || ''} onChange={handleEditInputChange} className="col-span-3" />
+                </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="address" className="text-right">Address</Label>
+                    <Input id="address" name="address" value={editedData.address || ''} onChange={handleEditInputChange} className="col-span-3" />
+                </div>
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setEmployeeToEdit(null)}>Cancel</Button>
+                <Button onClick={handleSaveChanges}>Save Changes</Button>
+            </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
