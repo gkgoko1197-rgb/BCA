@@ -68,7 +68,7 @@ export default function AdminLayout({
               <span className="">Admin Panel</span>
             </Link>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 overflow-y-auto">
             <NavLinks />
           </div>
           <div className="mt-auto p-4">
@@ -79,7 +79,7 @@ export default function AdminLayout({
           </div>
         </div>
       </div>
-      <div className="flex flex-col">
+      <div className="flex flex-col overflow-hidden">
         <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
           <Sheet>
             <SheetTrigger asChild>
