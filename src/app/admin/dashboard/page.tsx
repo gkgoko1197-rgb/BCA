@@ -66,6 +66,21 @@ export default function AdminEmployeePage() {
       baseSalary: "",
   });
 
+  const [payslipPreview, setPayslipPreview] = useState({
+    hra: 0,
+    da: 0,
+    conveyanceAllowance: 0,
+    medicalAllowance: 0,
+    specialAllowance: 0,
+    pf: 0,
+    esi: 0,
+    professionalTax: 0,
+    incomeTax: 0,
+    totalEarnings: 0,
+    totalDeductions: 0,
+    netSalary: 0,
+  });
+
   const { toast } = useToast();
 
   useEffect(() => {
@@ -82,6 +97,45 @@ export default function AdminEmployeePage() {
         window.removeEventListener('storage', loadData);
     };
   }, []);
+
+  useEffect(() => {
+    const salary = parseFloat(newEmployee.baseSalary) || 0;
+    const isSenior = ['Lead', 'Manager', 'Head'].some(d => newEmployee.designation.includes(d));
+    
+    const hra = salary * 0.4;
+    const da = salary * 0.15;
+    const conveyanceAllowance = isSenior ? 3000 : 2500;
+    const medicalAllowance = isSenior ? 3000 : 2500;
+    const specialAllowance = salary * 0.2 + (isSenior ? 5000 : 0);
+    
+    const pf = salary * 0.12;
+    const esi = salary * 0.0175;
+    const professionalTax = salary > 0 ? 200 : 0;
+    const incomeTax = salary * 0.15;
+
+    const earnings = [salary, hra, da, conveyanceAllowance, medicalAllowance, specialAllowance];
+    const totalEarnings = earnings.reduce((acc, val) => acc + val, 0);
+    
+    const deductions = [pf, esi, professionalTax, incomeTax];
+    const totalDeductions = deductions.reduce((acc, val) => acc + val, 0);
+
+    const netSalary = totalEarnings - totalDeductions;
+
+    setPayslipPreview({
+      hra,
+      da,
+      conveyanceAllowance,
+      medicalAllowance,
+      specialAllowance,
+      pf,
+      esi,
+      professionalTax,
+      incomeTax,
+      totalEarnings,
+      totalDeductions,
+      netSalary
+    });
+  }, [newEmployee.baseSalary, newEmployee.designation]);
 
   const getAvatar = (emp: Employee) => {
     const placeholder = PlaceHolderImages.find((p) => p.id === emp.profileImage);
@@ -519,54 +573,91 @@ export default function AdminEmployeePage() {
         </DialogContent>
       </Dialog>
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogContent className="sm:max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle>Add New Employee</DialogTitle>
-                    <DialogDescription>
-                        Fill in the details to create a new employee profile. Click save when you're done.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 max-h-[60vh] overflow-y-auto px-1">
-                    <div className="space-y-2">
-                        <Label htmlFor="name">Full Name</Label>
-                        <Input id="name" value={newEmployee.name} onChange={handleNewEmployeeChange} placeholder="e.g., Son Goku" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="email">Email Address</Label>
-                        <Input id="email" type="email" value={newEmployee.email} onChange={handleNewEmployeeChange} placeholder="e.g., goku@capsulecorp.com" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="designation">Designation</Label>
-                        <Input id="designation" value={newEmployee.designation} onChange={handleNewEmployeeChange} placeholder="e.g., Software Engineer" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="phone">Phone Number</Label>
-                        <Input id="phone" value={newEmployee.phone} onChange={handleNewEmployeeChange} placeholder="e.g., 555-1234" />
-                    </div>
-                    <div className="space-y-2 col-span-1 md:col-span-2">
-                        <Label htmlFor="address">Address</Label>
-                        <Input id="address" value={newEmployee.address} onChange={handleNewEmployeeChange} placeholder="e.g., 439 East District" />
-                    </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="dob">Date of Birth</Label>
-                        <Input id="dob" value={newEmployee.dob} onChange={handleNewEmployeeChange} placeholder="e.g., April 16, 1984" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="joiningDate">Joining Date</Label>
-                        <Input id="joiningDate" value={newEmployee.joiningDate} onChange={handleNewEmployeeChange} placeholder="e.g., June 26, 2020" />
-                    </div>
-                    <div className="space-y-2 col-span-1 md:col-span-2">
-                          <Separator className="my-2" />
-                          <Label htmlFor="baseSalary">Base Salary (Monthly)</Label>
-                          <Input id="baseSalary" type="number" value={newEmployee.baseSalary} onChange={handleNewEmployeeChange} placeholder="e.g., 50000" />
-                    </div>
+        <DialogContent className="sm:max-w-4xl">
+            <DialogHeader>
+                <DialogTitle>Add New Employee</DialogTitle>
+                <DialogDescription>
+                    Fill in the details to create a new employee profile. Click save when you're done.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-x-6 gap-y-4 py-4 max-h-[70vh] overflow-y-auto px-1">
+                <div className="md:col-span-4">
+                  <h3 className="text-lg font-semibold">Personal Information</h3>
+                  <Separator className="my-2" />
                 </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleCreateEmployee}>Save Employee</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+
+                <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input id="name" value={newEmployee.name} onChange={handleNewEmployeeChange} placeholder="e.g., Son Goku" />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input id="email" type="email" value={newEmployee.email} onChange={handleNewEmployeeChange} placeholder="e.g., goku@capsulecorp.com" />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="designation">Designation</Label>
+                    <Input id="designation" value={newEmployee.designation} onChange={handleNewEmployeeChange} placeholder="e.g., Software Engineer" />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input id="phone" value={newEmployee.phone} onChange={handleNewEmployeeChange} placeholder="e.g., 555-1234" />
+                </div>
+                <div className="space-y-2 md:col-span-4">
+                    <Label htmlFor="address">Address</Label>
+                    <Input id="address" value={newEmployee.address} onChange={handleNewEmployeeChange} placeholder="e.g., 439 East District" />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="dob">Date of Birth</Label>
+                    <Input id="dob" value={newEmployee.dob} onChange={handleNewEmployeeChange} placeholder="e.g., April 16, 1984" />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="joiningDate">Joining Date</Label>
+                    <Input id="joiningDate" value={newEmployee.joiningDate} onChange={handleNewEmployeeChange} placeholder="e.g., June 26, 2020" />
+                </div>
+
+                <div className="md:col-span-4">
+                    <Separator className="my-4" />
+                    <h3 className="text-lg font-semibold">Salary & Payslip Details</h3>
+                    <p className="text-sm text-muted-foreground mt-1">Enter base salary to preview the calculated payslip components.</p>
+                </div>
+                
+                <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="baseSalary">Base Salary (Monthly)</Label>
+                    <Input id="baseSalary" type="number" value={newEmployee.baseSalary} onChange={handleNewEmployeeChange} placeholder="e.g., 50000" />
+                </div>
+                <div className="space-y-2 md:col-span-2 font-bold text-lg flex items-end justify-center pb-2">
+                  <span>Net Salary: {formatCurrency(payslipPreview.netSalary)}</span>
+                </div>
+                
+                <div className="md:col-span-2">
+                  <h4 className="font-medium mb-2 text-muted-foreground">Earnings Preview</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center"><Label htmlFor="hra" className="w-1/2">HRA</Label><Input id="hra" readOnly value={payslipPreview.hra.toFixed(2)} className="bg-muted/50 h-8"/></div>
+                    <div className="flex items-center"><Label htmlFor="da" className="w-1/2">DA</Label><Input id="da" readOnly value={payslipPreview.da.toFixed(2)} className="bg-muted/50 h-8"/></div>
+                    <div className="flex items-center"><Label htmlFor="conveyance" className="w-1/2">Conveyance</Label><Input id="conveyance" readOnly value={payslipPreview.conveyanceAllowance.toFixed(2)} className="bg-muted/50 h-8"/></div>
+                    <div className="flex items-center"><Label htmlFor="medical" className="w-1/2">Medical</Label><Input id="medical" readOnly value={payslipPreview.medicalAllowance.toFixed(2)} className="bg-muted/50 h-8"/></div>
+                    <div className="flex items-center"><Label htmlFor="special" className="w-1/2">Special</Label><Input id="special" readOnly value={payslipPreview.specialAllowance.toFixed(2)} className="bg-muted/50 h-8"/></div>
+                    <div className="flex items-center font-bold mt-2"><Label htmlFor="totalEarnings" className="w-1/2">Gross Earnings</Label><Input id="totalEarnings" readOnly value={payslipPreview.totalEarnings.toFixed(2)} className="bg-muted/50 h-8"/></div>
+                  </div>
+                </div>
+
+                <div className="md:col-span-2">
+                  <h4 className="font-medium mb-2 text-muted-foreground">Deductions Preview</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center"><Label htmlFor="pf" className="w-1/2">PF</Label><Input id="pf" readOnly value={payslipPreview.pf.toFixed(2)} className="bg-muted/50 h-8"/></div>
+                    <div className="flex items-center"><Label htmlFor="esi" className="w-1/2">ESI</Label><Input id="esi" readOnly value={payslipPreview.esi.toFixed(2)} className="bg-muted/50 h-8"/></div>
+                    <div className="flex items-center"><Label htmlFor="tax" className="w-1/2">Prof. Tax</Label><Input id="tax" readOnly value={payslipPreview.professionalTax.toFixed(2)} className="bg-muted/50 h-8"/></div>
+                    <div className="flex items-center"><Label htmlFor="tds" className="w-1/2">Income Tax</Label><Input id="tds" readOnly value={payslipPreview.incomeTax.toFixed(2)} className="bg-muted/50 h-8"/></div>
+                     <div className="flex items-center font-bold mt-2"><Label htmlFor="totalDeductions" className="w-1/2">Total Deductions</Label><Input id="totalDeductions" readOnly value={payslipPreview.totalDeductions.toFixed(2)} className="bg-muted/50 h-8"/></div>
+                  </div>
+                </div>
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
+                <Button onClick={handleCreateEmployee}>Save Employee</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
