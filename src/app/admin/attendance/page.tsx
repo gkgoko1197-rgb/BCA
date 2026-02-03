@@ -74,7 +74,7 @@ export default function AdminAttendancePage() {
 
         return (
             <div 
-                className={cn("relative w-full h-full flex flex-col items-center p-1", isOutsideMonth ? 'cursor-default' : 'cursor-pointer hover:bg-accent/50')} 
+                className={cn("relative w-full h-full flex flex-col items-center p-1 pt-2", isOutsideMonth ? 'cursor-default' : 'cursor-pointer hover:bg-accent/50')} 
                 onClick={() => openAttendanceDialog(date)}
             >
                 <span className={cn("font-medium", isOutsideMonth && "opacity-50")}>{format(date, 'd')}</span>
@@ -135,13 +135,13 @@ export default function AdminAttendancePage() {
                         className="w-full flex-1 flex flex-col"
                         classNames={{
                             caption: "hidden", // We have our own header
-                            month: "flex flex-col flex-1",
-                            table: "flex flex-col flex-1",
-                            tbody: "flex flex-col flex-1",
-                            head_row: "flex justify-around mb-2",
-                            head_cell: "text-gray-500 uppercase font-semibold text-xs w-full pb-2 text-center",
-                            row: 'flex w-full justify-around border-t flex-1',
-                            cell: cn('w-full relative border-l first:border-l-0'),
+                            months: 'h-full',
+                            month: 'h-full flex flex-col',
+                            table: 'w-full border-collapse h-full',
+                            head_cell: "text-gray-500 uppercase font-semibold text-xs text-center p-2",
+                            tbody: 'h-full',
+                            row: 'border-t h-1/6', // h-1/6 of tbody for each row
+                            cell: cn('p-0 border-l first:border-l-0'),
                             day: 'w-full h-full',
                             day_today: 'bg-orange-100',
                             day_selected: 'bg-primary/20 text-primary-foreground',
