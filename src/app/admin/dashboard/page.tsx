@@ -32,7 +32,6 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { generatePayslipDataForEmployee, type DetailedPayslipData } from "@/lib/payslip";
@@ -49,10 +48,10 @@ export default function AdminEmployeePage() {
     setSelectedEmployeeForPayslip,
   ] = useState<Employee | null>(null);
   const [payslipData, setPayslipData] = useState<DetailedPayslipData | null>(null);
+  const [originalPayslipData, setOriginalPayslipData] = useState<DetailedPayslipData | null>(null);
 
-  // States for editing employee
-  const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
-  const [editedData, setEditedData] = useState<Partial<Employee>>({});
+  // State for inline editing of payslip
+  const [isPayslipEditing, setIsPayslipEditing] = useState(false);
 
   const { toast } = useToast();
 
@@ -114,7 +113,28 @@ export default function AdminEmployeePage() {
   const handleOpenPayslip = (employee: Employee) => {
     const data = generatePayslipDataForEmployee(employee);
     setPayslipData(data);
+    setOriginalPayslipData(data); // Store original for cancel
     setSelectedEmployeeForPayslip(employee);
+    setIsPayslipEditing(false);
+  };
+  
+  const handlePayslipChange = (type: 'earnings' | 'deductions', index: number, value: string) => {
+    if (!payslipData) return;
+
+    const newPayslip = { ...payslipData, earnings: [...payslipData.earnings], deductions: [...payslipData.deductions] };
+    const amount = parseFloat(value) || 0;
+
+    if (type === 'earnings') {
+        newPayslip.earnings[index] = { ...newPayslip.earnings[index], amount };
+    } else {
+        newPayslip.deductions[index] = { ...newPayslip.deductions[index], amount };
+    }
+
+    const totalEarnings = newPayslip.earnings.reduce((acc, item) => acc + item.amount, 0);
+    const totalDeductions = newPayslip.deductions.reduce((acc, item) => acc + item.amount, 0);
+    const netSalary = totalEarnings - totalDeductions;
+    
+    setPayslipData({ ...newPayslip, totalEarnings, totalDeductions, netSalary });
   };
 
   const handleDownload = (format: "PDF" | "TXT") => {
@@ -130,37 +150,6 @@ export default function AdminEmployeePage() {
       currency: "INR",
     }).format(amount);
 
-  // Edit handlers
-  const handleOpenEditDialog = (employee: Employee) => {
-      setEmployeeToEdit(employee);
-      setEditedData(employee);
-      setSelectedEmployeeForPayslip(null); // Close payslip dialog
-  };
-
-  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const { name, value } = e.target;
-      setEditedData(prev => ({...prev, [name]: value}));
-  };
-
-  const handleSaveChanges = () => {
-      if (!employeeToEdit) return;
-
-      const allEmployees: Employee[] = JSON.parse(localStorage.getItem("employees") || "[]");
-      const updatedEmployees = allEmployees.map(emp =>
-          emp.id === employeeToEdit.id ? { ...employeeToEdit, ...editedData } as Employee : emp
-      );
-      
-      localStorage.setItem('employees', JSON.stringify(updatedEmployees));
-      setEmployees(updatedEmployees);
-      
-      toast({
-          title: "Success",
-          description: "Employee information has been updated.",
-      });
-      
-      setEmployeeToEdit(null);
-      window.dispatchEvent(new Event('storage'));
-  };
 
   return (
     <>
@@ -231,7 +220,12 @@ export default function AdminEmployeePage() {
       {/* Payslip Dialog */}
       <Dialog
         open={!!selectedEmployeeForPayslip}
-        onOpenChange={(isOpen) => !isOpen && setSelectedEmployeeForPayslip(null)}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setSelectedEmployeeForPayslip(null);
+            setIsPayslipEditing(false);
+          }
+        }}
       >
         <DialogContent className="max-w-4xl">
           <DialogHeader>
@@ -264,7 +258,18 @@ export default function AdminEmployeePage() {
                     <h3 className="font-semibold mb-2 flex items-center"><Banknote className="mr-2 h-4 w-4 text-green-500"/>Earnings</h3>
                     <Table>
                         <TableBody>
-                            {payslipData?.earnings.map(item => <TableRow key={item.label}><TableCell>{item.label}</TableCell><TableCell className="text-right">{formatCurrency(item.amount)}</TableCell></TableRow>)}
+                            {payslipData?.earnings.map((item, index) => 
+                              <TableRow key={item.label}>
+                                <TableCell>{item.label}</TableCell>
+                                <TableCell className="text-right">
+                                  {isPayslipEditing ? (
+                                    <Input type="number" value={item.amount} onChange={(e) => handlePayslipChange('earnings', index, e.target.value)} className="h-8 text-right"/>
+                                  ) : (
+                                    formatCurrency(item.amount)
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            )}
                             <TableRow className="font-bold bg-muted/50"><TableCell>Gross Salary</TableCell><TableCell className="text-right">{formatCurrency(payslipData?.totalEarnings || 0)}</TableCell></TableRow>
                         </TableBody>
                     </Table>
@@ -273,7 +278,18 @@ export default function AdminEmployeePage() {
                     <h3 className="font-semibold mb-2 flex items-center"><Scissors className="mr-2 h-4 w-4 text-red-500"/>Deductions</h3>
                     <Table>
                         <TableBody>
-                            {payslipData?.deductions.map(item => <TableRow key={item.label}><TableCell>{item.label}</TableCell><TableCell className="text-right">{formatCurrency(item.amount)}</TableCell></TableRow>)}
+                            {payslipData?.deductions.map((item, index) => 
+                              <TableRow key={item.label}>
+                                <TableCell>{item.label}</TableCell>
+                                <TableCell className="text-right">
+                                {isPayslipEditing ? (
+                                    <Input type="number" value={item.amount} onChange={(e) => handlePayslipChange('deductions', index, e.target.value)} className="h-8 text-right"/>
+                                  ) : (
+                                    formatCurrency(item.amount)
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            )}
                             <TableRow className="font-bold bg-muted/50"><TableCell>Total Deductions</TableCell><TableCell className="text-right">{formatCurrency(payslipData?.totalDeductions || 0)}</TableCell></TableRow>
                         </TableBody>
                     </Table>
@@ -284,63 +300,38 @@ export default function AdminEmployeePage() {
               Net Salary: {formatCurrency(payslipData?.netSalary || 0)}
             </div>
           </div>
-          <DialogFooter className="sm:justify-end">
-            <div className="flex gap-2">
-                <Button onClick={() => handleDownload("PDF")}>
-                <Download className="mr-2 h-4 w-4" />
-                PDF
-                </Button>
-                <Button onClick={() => handleDownload("TXT")} variant="outline">
-                <Download className="mr-2 h-4 w-4" />
-                TXT
-                </Button>
-                <Button variant="secondary" onClick={() => handleOpenEditDialog(selectedEmployeeForPayslip!)}>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit
-                </Button>
-                <DialogClose asChild>
-                <Button variant="ghost">Close</Button>
-                </DialogClose>
+          <DialogFooter className="sm:justify-between items-center">
+            <div>
+              {isPayslipEditing && <p className="text-sm text-muted-foreground">Changes are temporary and not saved permanently.</p>}
             </div>
+            {isPayslipEditing ? (
+               <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => {
+                    setPayslipData(originalPayslipData);
+                    setIsPayslipEditing(false);
+                  }}>Cancel</Button>
+                  <Button onClick={() => setIsPayslipEditing(false)}>Save Changes</Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                  <Button onClick={() => handleDownload("PDF")}>
+                  <Download className="mr-2 h-4 w-4" />
+                  PDF
+                  </Button>
+                  <Button onClick={() => handleDownload("TXT")} variant="outline">
+                  <Download className="mr-2 h-4 w-4" />
+                  TXT
+                  </Button>
+                  <Button variant="secondary" onClick={() => setIsPayslipEditing(true)}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit
+                  </Button>
+                  <DialogClose asChild>
+                  <Button variant="ghost">Close</Button>
+                  </DialogClose>
+              </div>
+            )}
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Employee Dialog */}
-      <Dialog open={!!employeeToEdit} onOpenChange={(isOpen) => !isOpen && setEmployeeToEdit(null)}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Edit: {employeeToEdit?.name}</DialogTitle>
-                <DialogDescription>
-                    Update employee details below.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">Name</Label>
-                    <Input id="name" name="name" value={editedData.name || ''} onChange={handleEditInputChange} className="col-span-3" />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="designation" className="text-right">Designation</Label>
-                    <Input id="designation" name="designation" value={editedData.designation || ''} onChange={handleEditInputChange} className="col-span-3" />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="email" className="text-right">Email</Label>
-                    <Input id="email" name="email" type="email" value={editedData.email || ''} onChange={handleEditInputChange} className="col-span-3" />
-                </div>
-                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="phone" className="text-right">Phone</Label>
-                    <Input id="phone" name="phone" value={editedData.phone || ''} onChange={handleEditInputChange} className="col-span-3" />
-                </div>
-                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="address" className="text-right">Address</Label>
-                    <Input id="address" name="address" value={editedData.address || ''} onChange={handleEditInputChange} className="col-span-3" />
-                </div>
-            </div>
-            <DialogFooter>
-                <Button variant="outline" onClick={() => setEmployeeToEdit(null)}>Cancel</Button>
-                <Button onClick={handleSaveChanges}>Save Changes</Button>
-            </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
