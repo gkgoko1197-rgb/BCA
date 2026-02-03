@@ -32,6 +32,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { generatePayslipDataForEmployee, type DetailedPayslipData } from "@/lib/payslip";
@@ -49,6 +50,7 @@ export default function AdminEmployeePage() {
   ] = useState<Employee | null>(null);
   const [payslipData, setPayslipData] = useState<DetailedPayslipData | null>(null);
   const [originalPayslipData, setOriginalPayslipData] = useState<DetailedPayslipData | null>(null);
+  const [originalEmployee, setOriginalEmployee] = useState<Employee | null>(null);
 
   // State for inline editing of payslip
   const [isPayslipEditing, setIsPayslipEditing] = useState(false);
@@ -56,10 +58,18 @@ export default function AdminEmployeePage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const employeesData = JSON.parse(
-      localStorage.getItem("employees") || "[]"
-    );
-    setEmployees(employeesData);
+    const loadData = () => {
+        const employeesData = JSON.parse(
+          localStorage.getItem("employees") || "[]"
+        );
+        setEmployees(employeesData);
+    };
+    loadData();
+    
+    window.addEventListener('storage', loadData);
+    return () => {
+        window.removeEventListener('storage', loadData);
+    };
   }, []);
 
   const getAvatar = (emp: Employee) => {
@@ -113,8 +123,9 @@ export default function AdminEmployeePage() {
   const handleOpenPayslip = (employee: Employee) => {
     const data = generatePayslipDataForEmployee(employee);
     setPayslipData(data);
-    setOriginalPayslipData(data); // Store original for cancel
+    setOriginalPayslipData(JSON.parse(JSON.stringify(data)));
     setSelectedEmployeeForPayslip(employee);
+    setOriginalEmployee(JSON.parse(JSON.stringify(employee)));
     setIsPayslipEditing(false);
   };
   
@@ -135,6 +146,46 @@ export default function AdminEmployeePage() {
     const netSalary = totalEarnings - totalDeductions;
     
     setPayslipData({ ...newPayslip, totalEarnings, totalDeductions, netSalary });
+  };
+
+  const handleDetailsChange = (field: keyof Employee | 'companyName' | 'companyAddress', value: string) => {
+    if (field === 'companyName' || field === 'companyAddress') {
+      if (payslipData) {
+        const newPayslipData = { ...payslipData, company: { ...payslipData.company } };
+        if (field === 'companyName') {
+          newPayslipData.company.name = value;
+        } else {
+          newPayslipData.company.address = value;
+        }
+        setPayslipData(newPayslipData);
+      }
+    } else if (selectedEmployeeForPayslip) {
+      setSelectedEmployeeForPayslip({ ...selectedEmployeeForPayslip, [field]: value });
+    }
+  };
+
+  const handleSaveAllChanges = () => {
+    if (selectedEmployeeForPayslip) {
+      const updatedEmployees = employees.map(emp =>
+        emp.id === selectedEmployeeForPayslip.id ? selectedEmployeeForPayslip : emp
+      );
+      setEmployees(updatedEmployees);
+      localStorage.setItem('employees', JSON.stringify(updatedEmployees));
+      window.dispatchEvent(new Event('storage'));
+      toast({
+        title: "Changes Saved",
+        description: "Employee details updated. Payslip changes are temporary for this session.",
+      });
+    }
+    setOriginalPayslipData(payslipData);
+    setOriginalEmployee(selectedEmployeeForPayslip);
+    setIsPayslipEditing(false);
+  };
+
+  const handleCancelAllChanges = () => {
+    setPayslipData(originalPayslipData);
+    setSelectedEmployeeForPayslip(originalEmployee);
+    setIsPayslipEditing(false);
   };
 
   const handleDownload = (format: "PDF" | "TXT") => {
@@ -230,26 +281,64 @@ export default function AdminEmployeePage() {
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>
-              Payslip for {selectedEmployeeForPayslip?.name}
+              Payslip for {originalEmployee?.name}
             </DialogTitle>
             <DialogDescription>
               {payslipData?.monthYear} - Employee ID:{" "}
-              {selectedEmployeeForPayslip?.employeeId}
+              {originalEmployee?.employeeId}
             </DialogDescription>
           </DialogHeader>
           <div className="p-4 max-h-[70vh] overflow-y-auto">
              <div className="grid md:grid-cols-2 gap-6 text-sm">
-                <div className="space-y-2">
+                 <div className="space-y-4">
                     <h3 className="font-semibold flex items-center"><User className="mr-2 h-4 w-4 text-primary"/>Employee Information</h3>
-                    <p><strong>Name:</strong> {selectedEmployeeForPayslip?.name}</p>
-                    <p><strong>Employee ID:</strong> {selectedEmployeeForPayslip?.employeeId}</p>
-                    <p><strong>Designation:</strong> {selectedEmployeeForPayslip?.designation}</p>
-                    <p><strong>Date of Joining:</strong> {selectedEmployeeForPayslip?.joiningDate}</p>
+                    {isPayslipEditing ? (
+                        <>
+                            <div className="grid grid-cols-3 items-center gap-2">
+                                <Label className="text-right">Name</Label>
+                                <Input value={selectedEmployeeForPayslip?.name || ''} onChange={(e) => handleDetailsChange('name', e.target.value)} className="col-span-2 h-8"/>
+                            </div>
+                            <div className="grid grid-cols-3 items-center gap-2">
+                                <Label className="text-right">Employee ID</Label>
+                                <p className="col-span-2 text-muted-foreground">{selectedEmployeeForPayslip?.employeeId}</p>
+                            </div>
+                            <div className="grid grid-cols-3 items-center gap-2">
+                                <Label className="text-right">Designation</Label>
+                                <Input value={selectedEmployeeForPayslip?.designation || ''} onChange={(e) => handleDetailsChange('designation', e.target.value)} className="col-span-2 h-8"/>
+                            </div>
+                            <div className="grid grid-cols-3 items-center gap-2">
+                                <Label className="text-right">Joining Date</Label>
+                                <p className="col-span-2 text-muted-foreground">{selectedEmployeeForPayslip?.joiningDate}</p>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="space-y-2">
+                            <p><strong>Name:</strong> {selectedEmployeeForPayslip?.name}</p>
+                            <p><strong>Employee ID:</strong> {selectedEmployeeForPayslip?.employeeId}</p>
+                            <p><strong>Designation:</strong> {selectedEmployeeForPayslip?.designation}</p>
+                            <p><strong>Date of Joining:</strong> {selectedEmployeeForPayslip?.joiningDate}</p>
+                        </div>
+                    )}
                 </div>
-                <div className="space-y-2 text-right md:text-left">
+                <div className="space-y-4 text-right md:text-left">
                     <h3 className="font-semibold flex items-center md:items-start justify-end md:justify-start"><Building className="mr-2 h-4 w-4 text-primary"/>Employer Information</h3>
-                    <p><strong>{payslipData?.company.name}</strong></p>
-                    <p>{payslipData?.company.address}</p>
+                     {isPayslipEditing ? (
+                        <>
+                           <div className="grid grid-cols-3 items-center gap-2 text-left">
+                                <Label className="text-right">Company</Label>
+                                <Input value={payslipData?.company.name || ''} onChange={(e) => handleDetailsChange('companyName', e.target.value)} className="col-span-2 h-8"/>
+                            </div>
+                            <div className="grid grid-cols-3 items-center gap-2 text-left">
+                                <Label className="text-right">Address</Label>
+                                <Input value={payslipData?.company.address || ''} onChange={(e) => handleDetailsChange('companyAddress', e.target.value)} className="col-span-2 h-8"/>
+                            </div>
+                        </>
+                    ) : (
+                         <div className="space-y-2">
+                            <p><strong>{payslipData?.company.name}</strong></p>
+                            <p>{payslipData?.company.address}</p>
+                        </div>
+                    )}
                 </div>
             </div>
             <Separator className="my-4" />
@@ -301,16 +390,13 @@ export default function AdminEmployeePage() {
             </div>
           </div>
           <DialogFooter className="sm:justify-between items-center">
-            <div>
-              {isPayslipEditing && <p className="text-sm text-muted-foreground">Changes are temporary and not saved permanently.</p>}
+             <div>
+              {isPayslipEditing && <p className="text-sm text-muted-foreground">Employee details persist. Other changes are temporary.</p>}
             </div>
             {isPayslipEditing ? (
                <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => {
-                    setPayslipData(originalPayslipData);
-                    setIsPayslipEditing(false);
-                  }}>Cancel</Button>
-                  <Button onClick={() => setIsPayslipEditing(false)}>Save Changes</Button>
+                  <Button variant="outline" onClick={handleCancelAllChanges}>Cancel</Button>
+                  <Button onClick={handleSaveAllChanges}>Save Changes</Button>
               </div>
             ) : (
               <div className="flex gap-2">
