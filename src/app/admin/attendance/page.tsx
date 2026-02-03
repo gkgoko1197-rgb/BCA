@@ -107,9 +107,19 @@ export default function AdminAttendancePage() {
                         {format(day, "d")}
                     </time>
                     {record && isCurrentMonth && (
-                        <div className="flex items-center justify-start gap-1 pt-1">
-                            {record.present > 0 && <div className="h-2 w-2 rounded-full bg-green-500" />}
-                            {record.absent > 0 && <div className="h-2 w-2 rounded-full bg-red-500" />}
+                        <div className="flex flex-col items-start gap-1 pt-1 text-xs">
+                           {record.present > 0 && (
+                                <div className="flex items-center gap-1.5">
+                                    <div className="h-2 w-2 rounded-full bg-green-500" />
+                                    <span>{record.present} Present</span>
+                                </div>
+                            )}
+                            {record.absent > 0 && (
+                                <div className="flex items-center gap-1.5">
+                                    <div className="h-2 w-2 rounded-full bg-red-500" />
+                                    <span>{record.absent} Absent</span>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -124,15 +134,17 @@ export default function AdminAttendancePage() {
                             </TooltipTrigger>
                             <TooltipContent>
                                 <p className="font-semibold">{format(day, "PPP")}</p>
-                                {record.absent > 0 ? (
+                                <div className="mt-2 space-y-1">
+                                    <p><span className="font-semibold">Present:</span> {record.present}</p>
+                                    <p><span className="font-semibold">Absent:</span> {record.absent}</p>
+                                </div>
+                                {record.absent > 0 && (
                                     <>
                                         <p className="font-semibold mt-2">Absent Employees:</p>
                                         <ul className="list-disc list-inside">
                                             {record.absentIds.map(id => <li key={id}>{id}</li>)}
                                         </ul>
                                     </>
-                                ) : (
-                                    <p className="mt-2 text-muted-foreground">No absences recorded.</p>
                                 )}
                             </TooltipContent>
                         </Tooltip>
