@@ -2,15 +2,17 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { Download, Building, User, Calendar, FileText, Banknote, Shield, Scissors, BarChart, Check, Signature } from "lucide-react";
 import type { Employee } from "@/lib/data";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { generatePayslipDataForEmployee, type DetailedPayslipData } from "@/lib/payslip";
 
 export default function PayslipPage() {
     const [employee, setEmployee] = useState<Employee | null>(null);
+    const [payslipData, setPayslipData] = useState<DetailedPayslipData | null>(null);
     const { toast } = useToast();
 
     useEffect(() => {
@@ -18,7 +20,10 @@ export default function PayslipPage() {
         if (employeeId) {
             const employeesData = JSON.parse(localStorage.getItem('employees') || '[]');
             const currentEmployee = employeesData.find((e: Employee) => e.id === employeeId);
-            setEmployee(currentEmployee);
+            if (currentEmployee) {
+                setEmployee(currentEmployee);
+                setPayslipData(generatePayslipDataForEmployee(currentEmployee));
+            }
         }
     }, []);
 
@@ -29,38 +34,11 @@ export default function PayslipPage() {
         });
     };
 
-    if (!employee) {
+    if (!employee || !payslipData) {
         return <div>Loading payslip data...</div>;
     }
-
-    const payslipData = {
-        monthYear: "July 2024",
-        company: { name: "Capsule Corp.", address: "1 Technology Drive, West City" },
-        earnings: [
-            { label: "Basic Salary", amount: 50000 },
-            { label: "HRA", amount: 20000 },
-            { label: "DA", amount: 5000 },
-            { label: "Conveyance Allowance", amount: 2500 },
-            { label: "Medical Allowance", amount: 2500 },
-            { label: "Special Allowance", amount: 10000 },
-            { label: "Overtime Pay", amount: 5000 },
-            { label: "Bonus", amount: 10000 },
-        ],
-        deductions: [
-            { label: "PF", amount: 3600 },
-            { label: "ESI", amount: 1000 },
-            { label: "Professional Tax", amount: 200 },
-            { label: "Income Tax / TDS", amount: 8000 },
-            { label: "Loan Deduction", amount: 2000 },
-        ],
-        attendance: { totalDays: 22, present: 21, leave: 1, lop: 1 },
-        payment: { date: "July 31, 2024", bank: "Galactic Bank", account: "******1234", mode: "Direct Deposit" },
-    };
-
-    const totalEarnings = payslipData.earnings.reduce((acc, item) => acc + item.amount, 0);
-    const totalDeductions = payslipData.deductions.reduce((acc, item) => acc + item.amount, 0);
-    const netSalary = totalEarnings - totalDeductions;
-
+    
+    const { totalEarnings, totalDeductions, netSalary } = payslipData;
     const formatCurrency = (amount: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
 
     return (

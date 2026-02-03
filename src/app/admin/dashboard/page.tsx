@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Employee } from "@/lib/data";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Edit, FileText, Download } from "lucide-react";
+import { ArrowUpDown, Edit, FileText, Download, Building, User, Calendar, Banknote, Scissors, BarChart, Check, Signature } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -35,18 +35,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
+import { generatePayslipDataForEmployee, type DetailedPayslipData } from "@/lib/payslip";
 
-// Payslip related types
-type PayslipEarning = { label: string; amount: number };
-type PayslipDeduction = { label: string; amount: number };
-type PayslipData = {
-  monthYear: string;
-  earnings: PayslipEarning[];
-  deductions: PayslipDeduction[];
-  netSalary: number;
-  totalEarnings: number;
-  totalDeductions: number;
-};
 
 export default function AdminEmployeePage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -58,7 +48,7 @@ export default function AdminEmployeePage() {
     selectedEmployeeForPayslip,
     setSelectedEmployeeForPayslip,
   ] = useState<Employee | null>(null);
-  const [payslipData, setPayslipData] = useState<PayslipData | null>(null);
+  const [payslipData, setPayslipData] = useState<DetailedPayslipData | null>(null);
   const [
     selectedEmployeeForEdit,
     setSelectedEmployeeForEdit,
@@ -121,36 +111,8 @@ export default function AdminEmployeePage() {
     </TableHead>
   );
 
-  const generatePayslipData = (employee: Employee): PayslipData => {
-    const baseSalary = 40000 + parseInt(employee.employeeId.slice(3)) * 500;
-    const earnings: PayslipEarning[] = [
-      { label: "Basic Salary", amount: baseSalary },
-      { label: "HRA", amount: baseSalary * 0.4 },
-      { label: "Special Allowance", amount: baseSalary * 0.2 },
-    ];
-    const deductions: PayslipDeduction[] = [
-      { label: "PF", amount: baseSalary * 0.12 },
-      { label: "Professional Tax", amount: 200 },
-      { label: "Income Tax", amount: baseSalary * 0.1 },
-    ];
-    const totalEarnings = earnings.reduce((acc, item) => acc + item.amount, 0);
-    const totalDeductions = deductions.reduce(
-      (acc, item) => acc + item.amount,
-      0
-    );
-    const netSalary = totalEarnings - totalDeductions;
-    return {
-      monthYear: "July 2024",
-      earnings,
-      deductions,
-      totalEarnings,
-      totalDeductions,
-      netSalary,
-    };
-  };
-
   const handleOpenPayslip = (employee: Employee) => {
-    const data = generatePayslipData(employee);
+    const data = generatePayslipDataForEmployee(employee);
     setPayslipData(data);
     setSelectedEmployeeForPayslip(employee);
   };
@@ -273,7 +235,7 @@ export default function AdminEmployeePage() {
         open={!!selectedEmployeeForPayslip}
         onOpenChange={(isOpen) => !isOpen && setSelectedEmployeeForPayslip(null)}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>
               Payslip for {selectedEmployeeForPayslip?.name}
@@ -283,68 +245,74 @@ export default function AdminEmployeePage() {
               {selectedEmployeeForPayslip?.employeeId}
             </DialogDescription>
           </DialogHeader>
-          <div className="p-4 max-h-[60vh] overflow-y-auto">
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-semibold mb-2">Earnings</h3>
-                <Table>
-                  <TableBody>
-                    {payslipData?.earnings.map((item) => (
-                      <TableRow key={item.label}>
-                        <TableCell>{item.label}</TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(item.amount)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    <TableRow className="font-bold">
-                      <TableCell>Gross Salary</TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(payslipData?.totalEarnings || 0)}
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-              <div>
-                <h3 className="font-semibold mb-2">Deductions</h3>
-                <Table>
-                  <TableBody>
-                    {payslipData?.deductions.map((item) => (
-                      <TableRow key={item.label}>
-                        <TableCell>{item.label}</TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(item.amount)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    <TableRow className="font-bold">
-                      <TableCell>Total Deductions</TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(payslipData?.totalDeductions || 0)}
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
+          <div className="p-4 max-h-[70vh] overflow-y-auto">
+             <div className="grid md:grid-cols-2 gap-6 text-sm">
+                <div className="space-y-2">
+                    <h3 className="font-semibold flex items-center"><User className="mr-2 h-4 w-4 text-primary"/>Employee Information</h3>
+                    <p><strong>Name:</strong> {selectedEmployeeForPayslip?.name}</p>
+                    <p><strong>Employee ID:</strong> {selectedEmployeeForPayslip?.employeeId}</p>
+                    <p><strong>Designation:</strong> {selectedEmployeeForPayslip?.designation}</p>
+                    <p><strong>Date of Joining:</strong> {selectedEmployeeForPayslip?.joiningDate}</p>
+                </div>
+                <div className="space-y-2 text-right md:text-left">
+                    <h3 className="font-semibold flex items-center md:items-start justify-end md:justify-start"><Building className="mr-2 h-4 w-4 text-primary"/>Employer Information</h3>
+                    <p><strong>{payslipData?.company.name}</strong></p>
+                    <p>{payslipData?.company.address}</p>
+                </div>
+            </div>
+            <Separator className="my-4" />
+            <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                    <h3 className="font-semibold mb-2 flex items-center"><Banknote className="mr-2 h-4 w-4 text-green-500"/>Earnings</h3>
+                    <Table>
+                        <TableBody>
+                            {payslipData?.earnings.map(item => <TableRow key={item.label}><TableCell>{item.label}</TableCell><TableCell className="text-right">{formatCurrency(item.amount)}</TableCell></TableRow>)}
+                            <TableRow className="font-bold bg-muted/50"><TableCell>Gross Salary</TableCell><TableCell className="text-right">{formatCurrency(payslipData?.totalEarnings || 0)}</TableCell></TableRow>
+                        </TableBody>
+                    </Table>
+                </div>
+                 <div>
+                    <h3 className="font-semibold mb-2 flex items-center"><Scissors className="mr-2 h-4 w-4 text-red-500"/>Deductions</h3>
+                    <Table>
+                        <TableBody>
+                            {payslipData?.deductions.map(item => <TableRow key={item.label}><TableCell>{item.label}</TableCell><TableCell className="text-right">{formatCurrency(item.amount)}</TableCell></TableRow>)}
+                            <TableRow className="font-bold bg-muted/50"><TableCell>Total Deductions</TableCell><TableCell className="text-right">{formatCurrency(payslipData?.totalDeductions || 0)}</TableCell></TableRow>
+                        </TableBody>
+                    </Table>
+                </div>
             </div>
             <Separator className="my-4" />
             <div className="text-right font-bold text-lg">
               Net Salary: {formatCurrency(payslipData?.netSalary || 0)}
             </div>
           </div>
-          <DialogFooter>
-            <Button onClick={() => handleDownload("PDF")}>
-              <Download className="mr-2 h-4 w-4" />
-              PDF
-            </Button>
-            <Button onClick={() => handleDownload("TXT")} variant="outline">
-              <Download className="mr-2 h-4 w-4" />
-              TXT
-            </Button>
-            <DialogClose asChild>
-              <Button variant="ghost">Close</Button>
-            </DialogClose>
+          <DialogFooter className="sm:justify-between">
+            <div>
+                 <Button
+                    variant="outline"
+                    onClick={() => {
+                    if (selectedEmployeeForPayslip) {
+                        handleOpenEdit(selectedEmployeeForPayslip);
+                        setSelectedEmployeeForPayslip(null);
+                    }
+                    }}
+                >
+                    <Edit className="mr-2 h-4 w-4" /> Edit Employee
+                </Button>
+            </div>
+            <div className="flex gap-2">
+                <Button onClick={() => handleDownload("PDF")}>
+                <Download className="mr-2 h-4 w-4" />
+                PDF
+                </Button>
+                <Button onClick={() => handleDownload("TXT")} variant="outline">
+                <Download className="mr-2 h-4 w-4" />
+                TXT
+                </Button>
+                <DialogClose asChild>
+                <Button variant="ghost">Close</Button>
+                </DialogClose>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
