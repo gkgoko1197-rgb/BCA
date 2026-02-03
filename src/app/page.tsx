@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { initialEmployees } from "@/lib/data";
+import { initialEmployees, initialAttendanceData } from "@/lib/data";
 import { LogIn } from "lucide-react";
 
 export default function LoginPage() {
@@ -28,6 +28,9 @@ export default function LoginPage() {
     }
     if (typeof window !== 'undefined' && !localStorage.getItem('leaveRequests')) {
       localStorage.setItem('leaveRequests', JSON.stringify([]));
+    }
+    if (typeof window !== 'undefined' && !localStorage.getItem('attendanceData')) {
+        localStorage.setItem('attendanceData', JSON.stringify(initialAttendanceData));
     }
   }, []);
 

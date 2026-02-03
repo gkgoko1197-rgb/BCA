@@ -99,7 +99,7 @@ export const sampleLeaveRequests: LeaveRequest[] = Array.from({ length: 5 }, (_,
     }
 });
 
-export const attendanceData: { [key: string]: string[] } = {
+export const initialAttendanceData: { [key: string]: string[] } = {
     "2024-07-01": ["EMP003", "EMP008"],
     "2024-07-02": ["EMP015"],
     "2024-07-05": ["EMP002", "EMP011", "EMP019"],
