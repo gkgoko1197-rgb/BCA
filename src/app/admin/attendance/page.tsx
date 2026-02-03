@@ -74,7 +74,7 @@ export default function AdminAttendancePage() {
 
         return (
             <div 
-                className={cn("relative w-full h-full flex flex-col items-start p-1", isOutsideMonth ? 'cursor-default' : 'cursor-pointer hover:bg-accent/50')} 
+                className={cn("relative w-full h-full flex flex-col items-center p-1", isOutsideMonth ? 'cursor-default' : 'cursor-pointer hover:bg-accent/50')} 
                 onClick={() => openAttendanceDialog(date)}
             >
                 <span className={cn("font-medium", isOutsideMonth && "opacity-50")}>{format(date, 'd')}</span>
