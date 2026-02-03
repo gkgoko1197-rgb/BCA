@@ -288,7 +288,7 @@ export default function AdminEmployeePage() {
               {originalEmployee?.employeeId}
             </DialogDescription>
           </DialogHeader>
-          <div className="p-4 overflow-hidden">
+          <div className="p-4 overflow-y-auto max-h-[70vh]">
              <div className="grid md:grid-cols-2 gap-6 text-sm">
                  <div className="space-y-4">
                     <h3 className="font-semibold flex items-center"><User className="mr-2 h-4 w-4 text-primary"/>Employee Information</h3>
