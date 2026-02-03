@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import {
   Card,
   CardContent,
@@ -82,6 +84,7 @@ export default function AdminEmployeePage() {
   });
 
   const { toast } = useToast();
+  const payslipContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadData = () => {
@@ -305,7 +308,7 @@ export default function AdminEmployeePage() {
     return content;
   };
 
-  const handleDownload = () => {
+  const handleDownloadTxt = () => {
     if (!selectedEmployeeForPayslip || !payslipData) {
         toast({
             variant: "destructive",
@@ -329,6 +332,47 @@ export default function AdminEmployeePage() {
     toast({
       title: "Download Started",
       description: `Payslip has been downloaded as a TXT file.`,
+    });
+  };
+
+  const handleDownloadPdf = () => {
+    const input = payslipContentRef.current;
+    if (!input || !selectedEmployeeForPayslip || !payslipData) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not generate PDF.",
+      });
+      return;
+    }
+
+    html2canvas(input, { scale: 2 }).then((canvas) => {
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
+      const ratio = canvasWidth / canvasHeight;
+      let newCanvasWidth = pdfWidth;
+      let newCanvasHeight = newCanvasWidth / ratio;
+
+      if (newCanvasHeight > pdfHeight) {
+        newCanvasHeight = pdfHeight;
+        newCanvasWidth = newCanvasHeight * ratio;
+      }
+
+      const x = (pdfWidth - newCanvasWidth) / 2;
+      const y = 0;
+
+      pdf.addImage(imgData, "PNG", x, y, newCanvasWidth, newCanvasHeight);
+      pdf.save(
+        `Payslip-${selectedEmployeeForPayslip.employeeId}-${payslipData.monthYear}.pdf`
+      );
+      toast({
+        title: "Download Started",
+        description: "Payslip has been downloaded as a PDF file.",
+      });
     });
   };
 
@@ -498,7 +542,7 @@ export default function AdminEmployeePage() {
               {originalEmployee?.employeeId}
             </DialogDescription>
           </DialogHeader>
-          <div className="p-4 overflow-y-auto max-h-[70vh]">
+          <div ref={payslipContentRef} className="p-4 overflow-y-auto max-h-[70vh]">
              <div className="grid md:grid-cols-2 gap-6 text-sm">
                  <div className="space-y-4">
                     <h3 className="font-semibold flex items-center"><User className="mr-2 h-4 w-4 text-primary"/>Employee Information</h3>
@@ -614,9 +658,13 @@ export default function AdminEmployeePage() {
               </div>
             ) : (
               <div className="flex gap-2">
-                  <Button onClick={handleDownload}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download
+                  <Button onClick={handleDownloadPdf}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download PDF
+                  </Button>
+                  <Button variant="outline" onClick={handleDownloadTxt}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Download TXT
                   </Button>
                   <Button variant="secondary" onClick={() => setIsPayslipEditing(true)}>
                       <Pencil className="mr-2 h-4 w-4" />

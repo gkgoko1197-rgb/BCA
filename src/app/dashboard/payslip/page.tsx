@@ -1,10 +1,12 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-import { Download, Building, User, Calendar, Banknote, Scissors, BarChart, Check, Signature } from "lucide-react";
+import { Download, Building, User, Calendar, Banknote, Scissors, BarChart, Check, Signature, FileText } from "lucide-react";
 import type { Employee } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
 import { generatePayslipDataForEmployee, type DetailedPayslipData } from "@/lib/payslip";
@@ -13,6 +15,7 @@ export default function PayslipPage() {
     const [employee, setEmployee] = useState<Employee | null>(null);
     const [payslipData, setPayslipData] = useState<DetailedPayslipData | null>(null);
     const { toast } = useToast();
+    const payslipContentRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const employeeId = localStorage.getItem("employeeId");
@@ -80,7 +83,7 @@ export default function PayslipPage() {
         return content;
     };
 
-    const handleDownload = () => {
+    const handleDownloadTxt = () => {
         if (!employee || !payslipData) {
             toast({
                 variant: "destructive",
@@ -106,6 +109,55 @@ export default function PayslipPage() {
             description: `Your payslip has been downloaded as a TXT file.`,
         });
     };
+    
+    const handleDownloadPdf = () => {
+        const input = payslipContentRef.current;
+        if (!input || !employee || !payslipData) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Could not generate PDF.",
+            });
+            return;
+        }
+    
+        html2canvas(input, {
+          scale: 2,
+          onclone: (doc) => {
+            const buttonContainer = doc.querySelector('.payslip-download-buttons');
+            if (buttonContainer) {
+              (buttonContainer as HTMLElement).style.display = 'none';
+            }
+          }
+        }).then((canvas) => {
+          const imgData = canvas.toDataURL("image/png");
+          const pdf = new jsPDF("p", "mm", "a4");
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = pdf.internal.pageSize.getHeight();
+          const canvasWidth = canvas.width;
+          const canvasHeight = canvas.height;
+          const ratio = canvasWidth / canvasHeight;
+          let newCanvasWidth = pdfWidth;
+          let newCanvasHeight = newCanvasWidth / ratio;
+    
+          if (newCanvasHeight > pdfHeight) {
+            newCanvasHeight = pdfHeight;
+            newCanvasWidth = newCanvasHeight * ratio;
+          }
+    
+          const x = (pdfWidth - newCanvasWidth) / 2;
+          const y = 0;
+    
+          pdf.addImage(imgData, "PNG", x, y, newCanvasWidth, newCanvasHeight);
+          pdf.save(
+            `Payslip-${employee.employeeId}-${payslipData.monthYear}.pdf`
+          );
+          toast({
+            title: "Download Started",
+            description: "Payslip has been downloaded as a PDF file.",
+          });
+        });
+    };
 
     if (!employee || !payslipData) {
         return <div>Loading payslip data...</div>;
@@ -114,13 +166,16 @@ export default function PayslipPage() {
     const { totalEarnings, totalDeductions, netSalary } = payslipData;
 
     return (
-        <Card className="w-full max-w-4xl mx-auto">
+        <Card className="w-full max-w-4xl mx-auto" ref={payslipContentRef}>
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                     <CardTitle className="text-2xl">Payslip for {payslipData.monthYear}</CardTitle>
                     <CardDescription>Review your salary details for the current month.</CardDescription>
                 </div>
-                <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download</Button>
+                 <div className="flex gap-2 payslip-download-buttons">
+                    <Button onClick={handleDownloadPdf}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                    <Button onClick={handleDownloadTxt} variant="outline"><FileText className="mr-2 h-4 w-4"/> Download TXT</Button>
+                </div>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
                 <div className="grid md:grid-cols-2 gap-6 text-sm">
