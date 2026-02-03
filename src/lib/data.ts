@@ -13,6 +13,7 @@ export type Employee = {
   phone: string;
   profileImage: string;
   leaveStatus: 'Accepted' | 'Rejected' | 'Pending' | null;
+  baseSalary: number;
 };
 
 export type LeaveRequest = {
@@ -49,6 +50,7 @@ export const initialEmployees: Employee[] = [
     phone: "555-0101",
     profileImage: "1",
     leaveStatus: null,
+    baseSalary: 45600,
   },
   ...Array.from({ length: 19 }, (_, i) => {
     const id = i + 2;
@@ -74,6 +76,7 @@ export const initialEmployees: Employee[] = [
       phone: `555-${String(100 + i).padStart(4, '0')}`,
       profileImage: `${(i % 19) + 2}`,
       leaveStatus: null,
+      baseSalary: 45000 + id * 600,
     };
   }),
 ];

@@ -19,7 +19,7 @@ export const generatePayslipDataForEmployee = (employee: Employee): DetailedPays
     const monthYear = "July 2024";
     const company = { name: "Capsule Corp.", address: "1 Technology Drive, West City" };
 
-    const baseSalary = 45000 + parseInt(employee.employeeId.slice(3)) * 600;
+    const baseSalary = employee.baseSalary;
     const isSenior = ['Lead', 'Manager', 'Head'].some(d => employee.designation.includes(d));
 
     const earnings: PayslipEarning[] = [

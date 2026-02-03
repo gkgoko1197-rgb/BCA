@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Employee } from "@/lib/data";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, FileText, Download, Building, User, Banknote, Scissors, Pencil } from "lucide-react";
+import { ArrowUpDown, FileText, Download, Building, User, Banknote, Scissors, Pencil, UserPlus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -54,6 +54,17 @@ export default function AdminEmployeePage() {
 
   // State for inline editing of payslip
   const [isPayslipEditing, setIsPayslipEditing] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [newEmployee, setNewEmployee] = useState({
+      name: "",
+      designation: "",
+      email: "",
+      phone: "",
+      address: "",
+      dob: "",
+      joiningDate: "",
+      baseSalary: "",
+  });
 
   const { toast } = useToast();
 
@@ -160,7 +171,11 @@ export default function AdminEmployeePage() {
         setPayslipData(newPayslipData);
       }
     } else if (selectedEmployeeForPayslip) {
-      setSelectedEmployeeForPayslip({ ...selectedEmployeeForPayslip, [field]: value });
+        if(field === 'baseSalary') {
+            setSelectedEmployeeForPayslip({ ...selectedEmployeeForPayslip, [field]: parseFloat(value) || 0 });
+        } else {
+            setSelectedEmployeeForPayslip({ ...selectedEmployeeForPayslip, [field]: value });
+        }
     }
   };
 
@@ -201,15 +216,94 @@ export default function AdminEmployeePage() {
       currency: "INR",
     }).format(amount);
 
+  const handleNewEmployeeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setNewEmployee(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleCreateEmployee = () => {
+    const { name, designation, email, phone, address, dob, joiningDate, baseSalary } = newEmployee;
+
+    if (!name.trim() || !designation.trim() || !email.trim() || !phone.trim() || !address.trim() || !dob.trim() || !joiningDate.trim() || !baseSalary.trim()) {
+        toast({
+            variant: "destructive",
+            title: "Incomplete Form",
+            description: "Please fill out all fields to create an employee.",
+        });
+        return;
+    }
+
+    const salary = parseFloat(baseSalary);
+    if (isNaN(salary) || salary <= 0) {
+        toast({
+            variant: "destructive",
+            title: "Invalid Salary",
+            description: "Please enter a valid positive number for the base salary.",
+        });
+        return;
+    }
+
+    const maxIdNum = employees.reduce((max, emp) => {
+        const num = parseInt(emp.employeeId.replace('EMP', ''), 10);
+        return num > max ? num : max;
+    }, 0);
+    const newEmployeeId = `EMP${String(maxIdNum + 1).padStart(4, '0')}`;
+
+    const profileImageId = String(Math.floor(Math.random() * 20) + 1);
+
+    const employeeToAdd: Employee = {
+        id: `user-${Date.now()}`,
+        employeeId: newEmployeeId,
+        name,
+        designation,
+        email,
+        phone,
+        address,
+        dob,
+        joiningDate,
+        baseSalary: salary,
+        profileImage: profileImageId,
+        leaveStatus: null,
+    };
+
+    const updatedEmployees = [...employees, employeeToAdd];
+    setEmployees(updatedEmployees);
+    localStorage.setItem('employees', JSON.stringify(updatedEmployees));
+    window.dispatchEvent(new Event('storage'));
+
+    toast({
+        title: "Employee Created",
+        description: `${employeeToAdd.name} has been added successfully.`,
+    });
+
+    setIsCreateDialogOpen(false);
+    setNewEmployee({
+        name: "",
+        designation: "",
+        email: "",
+        phone: "",
+        address: "",
+        dob: "",
+        joiningDate: "",
+        baseSalary: "",
+    });
+  };
+
 
   return (
     <>
       <Card>
-        <CardHeader>
-          <CardTitle>Employee Records</CardTitle>
-          <CardDescription>
-            A list of all employees in the company.
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Employee Records</CardTitle>
+            <CardDescription>
+              A list of all employees in the company.
+            </CardDescription>
+          </div>
+           <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Add Employee
+            </Button>
         </CardHeader>
         <CardContent>
           <Table>
@@ -305,6 +399,10 @@ export default function AdminEmployeePage() {
                             <div className="grid grid-cols-3 items-center gap-2">
                                 <Label className="text-right">Designation</Label>
                                 <Input value={selectedEmployeeForPayslip?.designation || ''} onChange={(e) => handleDetailsChange('designation', e.target.value)} className="col-span-2 h-8"/>
+                            </div>
+                             <div className="grid grid-cols-3 items-center gap-2">
+                                <Label className="text-right">Base Salary</Label>
+                                <Input type="number" value={selectedEmployeeForPayslip?.baseSalary || ''} onChange={(e) => handleDetailsChange('baseSalary', e.target.value)} className="col-span-2 h-8"/>
                             </div>
                             <div className="grid grid-cols-3 items-center gap-2">
                                 <Label className="text-right">Joining Date</Label>
@@ -420,6 +518,55 @@ export default function AdminEmployeePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogContent className="sm:max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Add New Employee</DialogTitle>
+                    <DialogDescription>
+                        Fill in the details to create a new employee profile. Click save when you're done.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 max-h-[60vh] overflow-y-auto px-1">
+                    <div className="space-y-2">
+                        <Label htmlFor="name">Full Name</Label>
+                        <Input id="name" value={newEmployee.name} onChange={handleNewEmployeeChange} placeholder="e.g., Son Goku" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="email">Email Address</Label>
+                        <Input id="email" type="email" value={newEmployee.email} onChange={handleNewEmployeeChange} placeholder="e.g., goku@capsulecorp.com" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="designation">Designation</Label>
+                        <Input id="designation" value={newEmployee.designation} onChange={handleNewEmployeeChange} placeholder="e.g., Software Engineer" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="phone">Phone Number</Label>
+                        <Input id="phone" value={newEmployee.phone} onChange={handleNewEmployeeChange} placeholder="e.g., 555-1234" />
+                    </div>
+                    <div className="space-y-2 col-span-1 md:col-span-2">
+                        <Label htmlFor="address">Address</Label>
+                        <Input id="address" value={newEmployee.address} onChange={handleNewEmployeeChange} placeholder="e.g., 439 East District" />
+                    </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="dob">Date of Birth</Label>
+                        <Input id="dob" value={newEmployee.dob} onChange={handleNewEmployeeChange} placeholder="e.g., April 16, 1984" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="joiningDate">Joining Date</Label>
+                        <Input id="joiningDate" value={newEmployee.joiningDate} onChange={handleNewEmployeeChange} placeholder="e.g., June 26, 2020" />
+                    </div>
+                    <div className="space-y-2 col-span-1 md:col-span-2">
+                          <Separator className="my-2" />
+                          <Label htmlFor="baseSalary">Base Salary (Monthly)</Label>
+                          <Input id="baseSalary" type="number" value={newEmployee.baseSalary} onChange={handleNewEmployeeChange} placeholder="e.g., 50000" />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleCreateEmployee}>Save Employee</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </>
   );
 }
