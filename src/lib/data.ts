@@ -1,3 +1,4 @@
+import { eachDayOfInterval, format } from 'date-fns';
 import type { placeholderImages } from './placeholder-images';
 
 export type Employee = {
@@ -99,16 +100,38 @@ export const sampleLeaveRequests: LeaveRequest[] = Array.from({ length: 5 }, (_,
     }
 });
 
-export const initialAttendanceData: { [key: string]: string[] } = {
-    "2024-07-01": ["EMP003", "EMP008"],
-    "2024-07-02": ["EMP015"],
-    "2024-07-05": ["EMP002", "EMP011", "EMP019"],
-    "2024-07-08": ["EMP007"],
-    "2024-07-10": ["EMP005", "EMP014"],
-    "2024-07-12": ["EMP009"],
-    "2024-07-15": ["EMP004", "EMP010", "EMP018", "EMP020"],
-    "2024-07-18": ["EMP006"],
-    "2024-07-22": ["EMP012", "EMP013"],
-    "2024-07-25": ["EMP016", "EMP017"],
-    "2024-07-29": ["EMP001"],
+
+export type AttendanceRecord = {
+  present: number;
+  absent: number;
+  absentIds: string[];
 };
+
+export type AttendanceData = {
+  [date: string]: AttendanceRecord;
+};
+
+const generateInitialAttendanceData = (): AttendanceData => {
+  const data: AttendanceData = {};
+  const startDate = new Date('2025-01-01');
+  const endDate = new Date('2026-02-28');
+  const days = eachDayOfInterval({ start: startDate, end: endDate });
+  const employeeIds = initialEmployees.map(emp => emp.employeeId);
+
+  days.forEach(day => {
+    const dateKey = format(day, 'yyyy-MM-dd');
+    const absentCount = Math.floor(Math.random() * 5); // 0 to 4 absent employees
+    const shuffledIds = [...employeeIds].sort(() => 0.5 - Math.random());
+    const absentIds = shuffledIds.slice(0, absentCount);
+    
+    data[dateKey] = {
+      present: employeeIds.length - absentCount,
+      absent: absentCount,
+      absentIds: absentIds,
+    };
+  });
+
+  return data;
+};
+
+export const initialAttendanceData: AttendanceData = generateInitialAttendanceData();
