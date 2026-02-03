@@ -106,16 +106,28 @@ export default function PersonalInfoPage() {
   }
   
   const renderStatusSeal = () => {
-    if (!employee) return null;
-    let statusProps = {
-      className: "bg-yellow-400 text-yellow-900",
-      icon: Clock,
-      text: "Pending",
-    };
-    if (employee.leaveStatus === "Accepted") {
-      statusProps = { className: "bg-green-500", icon: CheckCircle, text: "Accepted" };
-    } else if (employee.leaveStatus === "Rejected") {
-      statusProps = { className: "bg-red-500", icon: XCircle, text: "Rejected" };
+    if (!employee || !employee.leaveStatus) {
+      return null;
+    }
+
+    let statusProps: { className: string; icon: React.ElementType; text: string; };
+
+    switch (employee.leaveStatus) {
+      case "Accepted":
+        statusProps = { className: "bg-green-500", icon: CheckCircle, text: "Accepted" };
+        break;
+      case "Rejected":
+        statusProps = { className: "bg-red-500", icon: XCircle, text: "Rejected" };
+        break;
+      case "Pending":
+        statusProps = {
+          className: "bg-yellow-400 text-yellow-900",
+          icon: Clock,
+          text: "Pending",
+        };
+        break;
+      default:
+        return null;
     }
     
     return (

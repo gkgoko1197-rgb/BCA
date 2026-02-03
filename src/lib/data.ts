@@ -11,7 +11,7 @@ export type Employee = {
   address: string;
   phone: string;
   profileImage: string;
-  leaveStatus: 'Accepted' | 'Rejected' | 'Pending';
+  leaveStatus: 'Accepted' | 'Rejected' | 'Pending' | null;
 };
 
 export type LeaveRequest = {
@@ -47,7 +47,7 @@ export const initialEmployees: Employee[] = [
     address: "123 Saiyan Street, West City",
     phone: "555-0101",
     profileImage: "1",
-    leaveStatus: "Pending",
+    leaveStatus: null,
   },
   ...Array.from({ length: 19 }, (_, i) => {
     const id = i + 2;
@@ -72,7 +72,7 @@ export const initialEmployees: Employee[] = [
       address: `${124 + i} Galaxy Road, Planet ${i + 1}`,
       phone: `555-01${String(id).padStart(2, '0')}`,
       profileImage: `${id}`,
-      leaveStatus: "Pending" as 'Pending',
+      leaveStatus: null,
     };
   }),
 ];
