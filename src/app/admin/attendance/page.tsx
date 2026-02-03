@@ -26,10 +26,27 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { AttendanceData } from "@/lib/data";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { initialEmployees } from "@/lib/data";
 
 export default function AdminAttendancePage() {
   const [currentDate, setCurrentDate] = useState(new Date("2025-01-01"));
   const [attendanceData, setAttendanceData] = useState<AttendanceData>({});
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [editedAbsentCount, setEditedAbsentCount] = useState(0);
+  const { toast } = useToast();
+
+  const totalEmployees = initialEmployees.length;
 
   const minDate = new Date("2025-01-01");
   const maxDate = new Date("2026-02-28");
@@ -60,6 +77,51 @@ export default function AdminAttendancePage() {
       setCurrentDate(newDate);
     }
   };
+
+  const handleDayClick = (day: Date) => {
+    setSelectedDate(day);
+    const dateKey = format(day, 'yyyy-MM-dd');
+    const record = attendanceData[dateKey];
+    setEditedAbsentCount(record ? record.absent : 0);
+  };
+
+  const handleAbsentCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = parseInt(e.target.value, 10);
+    if (isNaN(value)) value = 0;
+    if (value < 0) value = 0;
+    if (value > totalEmployees) value = totalEmployees;
+    setEditedAbsentCount(value);
+  };
+
+  const handleSave = () => {
+    if (!selectedDate) return;
+
+    const dateKey = format(selectedDate, 'yyyy-MM-dd');
+    const presentCount = totalEmployees - editedAbsentCount;
+    
+    const allEmployeeIds = initialEmployees.map(e => e.employeeId);
+    const shuffledIds = [...allEmployeeIds].sort(() => 0.5 - Math.random());
+    const newAbsentIds = shuffledIds.slice(0, editedAbsentCount);
+
+    const updatedRecord = {
+      present: presentCount,
+      absent: editedAbsentCount,
+      absentIds: newAbsentIds,
+    };
+
+    const newAttendanceData = { ...attendanceData, [dateKey]: updatedRecord };
+    
+    setAttendanceData(newAttendanceData);
+    localStorage.setItem('attendanceData', JSON.stringify(newAttendanceData));
+    
+    toast({
+        title: "Attendance Updated",
+        description: `Attendance for ${format(selectedDate, "PPP")} has been saved.`,
+    });
+    
+    setSelectedDate(null);
+  };
+
 
   const isPrevDisabled = isSameMonth(currentDate, minDate);
   const isNextDisabled = isSameMonth(currentDate, maxDate);
@@ -95,9 +157,10 @@ export default function AdminAttendancePage() {
             const dayContent = (
                  <div
                     key={day.toString()}
+                    onClick={() => handleDayClick(day)}
                     className={cn(
-                    "border-b border-r border-gray-200 p-2 flex flex-col items-start justify-start gap-1",
-                    !isCurrentMonth && "bg-muted/50 text-muted-foreground"
+                      "border-b border-r border-gray-200 p-2 flex flex-col items-start justify-start gap-1 cursor-pointer hover:bg-accent/50",
+                      !isCurrentMonth && "bg-muted/50 text-muted-foreground"
                     )}
                 >
                     <time dateTime={format(day, "yyyy-MM-dd")} className={cn(
@@ -106,7 +169,7 @@ export default function AdminAttendancePage() {
                     )}>
                         {format(day, "d")}
                     </time>
-                    {record && isCurrentMonth && (
+                    {record && (
                         <div className="flex flex-col items-start gap-1 pt-1 text-xs">
                            {record.present > 0 && (
                                 <div className="flex items-center gap-1.5">
@@ -155,6 +218,45 @@ export default function AdminAttendancePage() {
             return dayContent;
           })}
       </div>
+      <Dialog open={!!selectedDate} onOpenChange={(isOpen) => !isOpen && setSelectedDate(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Attendance for {selectedDate ? format(selectedDate, "PPP") : ""}</DialogTitle>
+            <DialogDescription>
+              Update the number of absent employees for this day. The number of present employees will be calculated automatically.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="absent" className="text-right">
+                Absent
+              </Label>
+              <Input
+                id="absent"
+                type="number"
+                value={editedAbsentCount}
+                onChange={handleAbsentCountChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="present" className="text-right">
+                Present
+              </Label>
+              <Input
+                id="present"
+                value={totalEmployees - editedAbsentCount}
+                readOnly
+                className="col-span-3 bg-muted"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedDate(null)}>Cancel</Button>
+            <Button onClick={handleSave}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

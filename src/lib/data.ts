@@ -50,17 +50,17 @@ export const initialEmployees: Employee[] = [
     profileImage: "1",
     leaveStatus: null,
   },
-  ...Array.from({ length: 409 }, (_, i) => {
+  ...Array.from({ length: 19 }, (_, i) => {
     const id = i + 2;
-    const firstNames = ["Son", "Krillin", "Bulma", "Piccolo", "Chi-Chi", "Trunks", "Android", "Master", "Yamcha", "Tien", "Frieza", "Cell", "Majin", "Beerus", "Whis", "Jiren", "Kale", "Caulifla", "Broly", "Gogeta", "Vegito", "Zamasu", "Hit", "Cabba", "Frost"];
-    const lastNames = ["Gohan", "Mu", "Brief", "Jr.", "Ox-King", "Briefs", "18", "Roshi", "Shinhan", "Chaozu", "Force", "Saga", "Buu", "Sama", "Angel", "The Gray", "Berserker", "Super Saiyan", "Legendary", "Fusion", "Potara", "Kai", "Assassin", "Saiyan", "Emperor"];
+    const firstNames = ["Son", "Krillin", "Bulma", "Piccolo", "Chi-Chi", "Trunks", "Android", "Master", "Yamcha", "Tien", "Frieza", "Cell", "Majin", "Beerus", "Whis", "Jiren", "Kale", "Caulifla", "Broly"];
+    const lastNames = ["Gohan", "Mu", "Brief", "Jr.", "Ox-King", "Briefs", "18", "Roshi", "Shinhan", "Chaozu", "Force", "Saga", "Buu", "Sama", "Angel", "The Gray", "Berserker", "Super Saiyan", "Legendary"];
     const designations = ["Software Engineer", "Product Manager", "UI/UX Designer", "QA Tester", "DevOps Engineer", "Data Scientist", "HR Manager", "Marketing Head", "Intern", "Team Lead"];
     const firstName = firstNames[i % firstNames.length];
     const lastName = lastNames[i % lastNames.length];
     const name = `${firstName} ${lastName}`;
     const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}${i}@example.com`;
-    const joiningDate = new Date(2021 + Math.floor(i/50), (i % 12) + 1, (i % 28) + 1);
-    const dob = new Date(1980 + Math.floor(i/10), (i % 12) + 1, (i % 28) + 1);
+    const joiningDate = new Date(2021 + Math.floor(i/5), (i % 12) + 1, (i % 28) + 1);
+    const dob = new Date(1980 + i, (i % 12) + 1, (i % 28) + 1);
 
     return {
       id: `user-${id}`,
@@ -120,10 +120,7 @@ const generateInitialAttendanceData = (): AttendanceData => {
 
   days.forEach(day => {
     const dateKey = format(day, 'yyyy-MM-dd');
-    // To satisfy "present maximum 400" with 410 employees, absent must be >= 10.
-    // To satisfy "absent minimum 5", absent must be >= 5.
-    // We will satisfy both by making absent count between 10 and 20.
-    const absentCount = Math.floor(Math.random() * 11) + 10;
+    const absentCount = Math.floor(Math.random() * 3); // 0, 1, or 2 absent
     const shuffledIds = [...employeeIds].sort(() => 0.5 - Math.random());
     const absentIds = shuffledIds.slice(0, absentCount);
     
