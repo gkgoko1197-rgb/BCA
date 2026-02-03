@@ -18,8 +18,8 @@ const config = {
     },
     extend: {
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
-        headline: ['Inter', 'sans-serif'],
+        body: ['"Lobster Two"', 'sans-serif'],
+        headline: ['"Lobster Two"', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
