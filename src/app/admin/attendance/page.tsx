@@ -1,22 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Calendar } from "@/components/ui/calendar";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { format, getYear, setYear, getMonth, setMonth, startOfMonth } from "date-fns";
 import type { Employee } from "@/lib/data";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
-import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 export default function AdminAttendancePage() {
-    const [month, setMonth] = useState<Date>(new Date());
+    const [currentDate, setCurrentDate] = useState<Date>(new Date());
     const [attendanceData, setAttendanceData] = useState<{ [key: string]: string[] }>({});
     const [employees, setEmployees] = useState<Employee[]>([]);
     
@@ -24,9 +22,6 @@ export default function AdminAttendancePage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedDateForDialog, setSelectedDateForDialog] = useState<Date | undefined>();
     const [selectedAbsentees, setSelectedAbsentees] = useState<string[]>([]);
-
-    // For the "Mark Attendance" card
-    const [dateForMarking, setDateForMarking] = useState<Date | undefined>(new Date());
     
     const { toast } = useToast();
 
@@ -43,6 +38,10 @@ export default function AdminAttendancePage() {
     }
 
     const openAttendanceDialog = (date: Date) => {
+        // Don't open dialog for outside days
+        if (getMonth(date) !== getMonth(currentDate)) {
+            return;
+        }
         const dateString = format(date, 'yyyy-MM-dd');
         setSelectedDateForDialog(date);
         setSelectedAbsentees(attendanceData[dateString] || []);
@@ -71,119 +70,112 @@ export default function AdminAttendancePage() {
         const dateString = format(date, 'yyyy-MM-dd');
         const absentEmployeeIds = attendanceData[dateString] || [];
         const absentEmployees = absentEmployeeIds.map(id => employees.find(e => e.employeeId === id)).filter(Boolean) as Employee[];
+        const isOutsideMonth = getMonth(date) !== getMonth(currentDate);
 
         return (
-            <div className="relative w-full h-full flex items-center justify-center cursor-pointer" onClick={() => openAttendanceDialog(date)}>
-                {format(date, 'd')}
-                {absentEmployees.length > 0 && (
-                    <div className="absolute bottom-1 flex -space-x-2">
-                        {absentEmployees.slice(0, 2).map(emp => (
-                             <Avatar key={emp.id} className="h-5 w-5 border-2 border-background">
-                                <AvatarImage src={getAvatar(emp)} alt={emp.name} />
-                                <AvatarFallback>{emp.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                        ))}
-                        {absentEmployees.length > 2 && (
-                             <Avatar className="h-5 w-5 border-2 border-background">
-                                <AvatarFallback className="text-[10px] bg-muted-foreground text-white">+{absentEmployees.length - 2}</AvatarFallback>
-                            </Avatar>
-                        )}
+            <div 
+                className={cn("relative w-full h-full flex flex-col items-start p-1", isOutsideMonth ? 'cursor-default' : 'cursor-pointer hover:bg-accent/50')} 
+                onClick={() => openAttendanceDialog(date)}
+            >
+                <span className={cn("font-medium", isOutsideMonth && "opacity-50")}>{format(date, 'd')}</span>
+                {absentEmployees.length > 0 && !isOutsideMonth && (
+                    <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex justify-center w-full">
+                         <div className="flex -space-x-2">
+                            {absentEmployees.slice(0, 2).map(emp => (
+                                <Avatar key={emp.id} className="h-5 w-5 border-2 border-white">
+                                    <AvatarImage src={getAvatar(emp)} alt={emp.name} />
+                                    <AvatarFallback className="text-[10px]">{emp.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                            ))}
+                            {absentEmployees.length > 2 && (
+                                <Avatar className="h-5 w-5 border-2 border-white">
+                                    <AvatarFallback className="text-[10px] bg-muted-foreground text-white">+{absentEmployees.length - 2}</AvatarFallback>
+                                </Avatar>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>
         );
     };
-    
-    const todayString = format(new Date(), 'yyyy-MM-dd');
-    const absenteesTodayIds = attendanceData[todayString] || [];
-    const absenteesToday = absenteesTodayIds.map(id => employees.find(e => e.employeeId === id)).filter(Boolean) as Employee[];
+
+    const year = getYear(currentDate);
+    const months = Array.from({ length: 12 }, (_, i) => startOfMonth(setMonth(new Date(year, 0, 1), i)));
+
+    const handleYearChange = (direction: 'prev' | 'next') => {
+        const newYear = direction === 'prev' ? year - 1 : year + 1;
+        setCurrentDate(setYear(currentDate, newYear));
+    }
 
     return (
-        <>
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-                <Card className="xl:col-span-2">
-                    <CardHeader>
-                        <CardTitle>Attendance Calendar</CardTitle>
-                        <CardDescription>Click on a date to mark attendance. Avatars show absent employees.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Calendar
-                            month={month}
-                            onMonthChange={setMonth}
-                            modifiers={{ absent: Object.keys(attendanceData).map(d => new Date(d)) }}
-                            modifiersClassNames={{ absent: 'font-bold' }}
-                            className="w-full"
-                            components={{
-                                DayContent: DayWithAvatars
-                            }}
-                        />
-                    </CardContent>
-                </Card>
-                <div className="space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Today's Absentees</CardTitle>
-                            <CardDescription>Employees marked absent for {format(new Date(), 'PPP')}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {absenteesToday.length > 0 ? (
-                                <div className="space-y-4 max-h-60 overflow-y-auto pr-2">
-                                    {absenteesToday.map(emp => (
-                                        <div key={emp.id} className="flex items-center gap-4">
-                                            <Avatar>
-                                                <AvatarImage src={getAvatar(emp)} alt={emp.name} data-ai-hint="profile portrait" />
-                                                <AvatarFallback>{emp.name.charAt(0)}</AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                                <p className="font-medium">{emp.name}</p>
-                                                <p className="text-sm text-muted-foreground">{emp.employeeId}</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center text-muted-foreground py-10">
-                                    <p>Everyone is present today!</p>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Mark Daily Attendance</CardTitle>
-                            <CardDescription>Select a date and mark employee attendance.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                        "w-full justify-start text-left font-normal",
-                                        !dateForMarking && "text-muted-foreground"
-                                    )}
-                                    >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {dateForMarking ? format(dateForMarking, "PPP") : <span>Pick a date</span>}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                    <Calendar
-                                        mode="single"
-                                        selected={dateForMarking}
-                                        onSelect={setDateForMarking}
-                                        initialFocus
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        </CardContent>
-                        <CardFooter>
-                            <Button className="w-full" onClick={() => dateForMarking && openAttendanceDialog(dateForMarking)} disabled={!dateForMarking}>
-                                Mark Attendance
+        <div className="flex flex-col h-full -m-6 bg-gray-100">
+            <header className="bg-gray-800 text-white py-4 px-6">
+                <h1 className="text-3xl font-bold tracking-wider text-center">
+                    <span className="text-orange-400">{year}</span> CALENDAR-PLANNER
+                </h1>
+            </header>
+
+            <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 p-6">
+                <main className="lg:col-span-3 bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+                    <div className="flex items-center justify-between pb-4">
+                        <h2 className="text-2xl sm:text-3xl font-bold text-orange-500">{format(currentDate, 'MMMM')}</h2>
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" size="icon" onClick={() => setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}>
+                                <ChevronLeft className="h-5 w-5" />
                             </Button>
-                        </CardFooter>
-                    </Card>
-                </div>
+                             <Button variant="outline" size="icon" onClick={() => setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}>
+                                <ChevronRight className="h-5 w-5" />
+                            </Button>
+                        </div>
+                    </div>
+
+                    <Calendar
+                        month={currentDate}
+                        onMonthChange={setCurrentDate}
+                        className="w-full"
+                        classNames={{
+                            caption: "hidden", // We have our own header
+                            head_row: "flex justify-around mb-2",
+                            head_cell: "text-gray-500 uppercase font-semibold text-xs w-full pb-2 text-center",
+                            row: 'flex w-full justify-around border-t',
+                            cell: cn('h-20 sm:h-24 md:h-28 w-full relative border-l first:border-l-0'),
+                            day: 'w-full h-full',
+                            day_today: 'bg-orange-100',
+                            day_selected: 'bg-primary/20 text-primary-foreground',
+                            day_outside: 'text-muted-foreground opacity-50'
+                        }}
+                        showOutsideDays
+                        components={{
+                            DayContent: DayWithAvatars,
+                        }}
+                    />
+                </main>
+                <aside className="lg:col-span-1 bg-white p-4 rounded-lg shadow-lg">
+                     <div className="flex items-center justify-between pb-2 border-b mb-4">
+                        <Button variant="ghost" size="icon" onClick={() => handleYearChange('prev')}>
+                            <ChevronLeft className="h-5 w-5" />
+                        </Button>
+                        <h3 className="font-bold text-xl text-gray-700">{year}</h3>
+                        <Button variant="ghost" size="icon" onClick={() => handleYearChange('next')}>
+                            <ChevronRight className="h-5 w-5" />
+                        </Button>
+                    </div>
+                    <div className="grid grid-cols-3 xl:grid-cols-2 2xl:grid-cols-3 gap-2">
+                        {months.map(month => (
+                            <Button
+                                key={month.getMonth()}
+                                variant={getMonth(month) === getMonth(currentDate) ? "default" : "outline"}
+                                className={cn(
+                                    "h-12 text-sm",
+                                    getMonth(month) === getMonth(currentDate) && "bg-orange-500 hover:bg-orange-600 text-white"
+                                )}
+                                onClick={() => setCurrentDate(month)}
+                            >
+                                {format(month, 'MMM')}
+                            </Button>
+                        ))}
+                    </div>
+                </aside>
             </div>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -218,6 +210,6 @@ export default function AdminAttendancePage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </>
+        </div>
     );
 }
