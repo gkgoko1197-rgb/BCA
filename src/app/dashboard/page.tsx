@@ -62,11 +62,12 @@ export default function PersonalInfoPage() {
   const handleSave = () => {
     if (employee) {
       const employees: Employee[] = JSON.parse(localStorage.getItem("employees") || "[]");
+      const updatedEmployee = { ...employee, ...formData };
       const updatedEmployees = employees.map((emp) =>
-        emp.id === employee.id ? { ...emp, ...formData } : emp
+        emp.id === employee.id ? updatedEmployee : emp
       );
       localStorage.setItem("employees", JSON.stringify(updatedEmployees));
-      setEmployee({ ...employee, ...formData });
+      setEmployee(updatedEmployee);
       setIsEditing(false);
       toast({ title: "Success", description: "Personal information updated." });
     }
@@ -157,7 +158,7 @@ export default function PersonalInfoPage() {
             <CardHeader>
                 <CardTitle>Personal Information</CardTitle>
                 <CardDescription>View and manage your personal details.</CardDescription>
-                {renderStatusSeal()}
+                {employee.leaveStatus && renderStatusSeal()}
             </CardHeader>
             <CardContent className="grid md:grid-cols-[180px_1fr] gap-8 items-start">
                 <div className="flex flex-col items-center gap-4">
@@ -165,9 +166,28 @@ export default function PersonalInfoPage() {
                         <AvatarImage src={getAvatar(employee)} alt={employee.name} data-ai-hint="profile portrait"/>
                         <AvatarFallback className="text-4xl">{employee.name.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <div className="text-center">
-                        <p className="text-xl font-bold">{employee.name}</p>
-                        <p className="text-muted-foreground">{employee.designation}</p>
+                     <div className="text-center">
+                        {isEditing ? (
+                            <div className="space-y-2">
+                                <Input
+                                    name="name"
+                                    className="text-center text-xl font-bold"
+                                    value={formData.name || ""}
+                                    onChange={handleInputChange}
+                                />
+                                <Input
+                                    name="designation"
+                                    className="text-center"
+                                    value={formData.designation || ""}
+                                    onChange={handleInputChange}
+                                />
+                            </div>
+                        ) : (
+                            <>
+                                <p className="text-xl font-bold">{employee.name}</p>
+                                <p className="text-muted-foreground">{employee.designation}</p>
+                            </>
+                        )}
                     </div>
                 </div>
 
