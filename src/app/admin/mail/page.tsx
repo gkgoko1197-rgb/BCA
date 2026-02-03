@@ -11,11 +11,24 @@ import { Check, X } from "lucide-react";
 
 export default function AdminMailPage() {
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+    const [messages, setMessages] = useState<Message[]>([]);
     const { toast } = useToast();
 
     useEffect(() => {
-        const storedRequests = JSON.parse(localStorage.getItem('leaveRequests') || '[]');
-        setLeaveRequests(storedRequests);
+        const loadData = () => {
+            const storedRequests = JSON.parse(localStorage.getItem('leaveRequests') || '[]');
+            setLeaveRequests(storedRequests);
+            
+            const storedMessages = JSON.parse(localStorage.getItem('messages') || '[]');
+            setMessages(storedMessages);
+        };
+        
+        loadData();
+        
+        window.addEventListener('storage', loadData);
+        return () => {
+            window.removeEventListener('storage', loadData);
+        };
     }, []);
 
     const handleLeaveRequest = (requestId: string, employeeId: string, status: 'Accepted' | 'Rejected') => {
@@ -47,7 +60,7 @@ export default function AdminMailPage() {
         <Tabs defaultValue="leave-requests">
             <TabsList>
                 <TabsTrigger value="leave-requests">Leave Requests ({leaveRequests.length})</TabsTrigger>
-                <TabsTrigger value="general-mail">General Mail ({sampleMessages.length})</TabsTrigger>
+                <TabsTrigger value="general-mail">General Mail ({messages.length})</TabsTrigger>
             </TabsList>
 
             <TabsContent value="leave-requests" className="mt-4">
@@ -91,7 +104,7 @@ export default function AdminMailPage() {
                         <CardDescription>Standard messages from employees.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {sampleMessages.map(msg => (
+                        {messages.length > 0 ? messages.map(msg => (
                              <Card key={msg.id} className="bg-secondary/50">
                                 <CardHeader>
                                     <CardTitle className="text-base">{msg.subject}</CardTitle>
@@ -101,7 +114,11 @@ export default function AdminMailPage() {
                                     <p className="text-sm">{msg.body}</p>
                                 </CardContent>
                             </Card>
-                        ))}
+                        )) : (
+                            <div className="text-center text-muted-foreground py-10">
+                                <p>No general messages.</p>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </TabsContent>

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { initialEmployees, initialAttendanceData } from "@/lib/data";
+import { initialEmployees, initialAttendanceData, sampleMessages } from "@/lib/data";
 import { LogIn } from "lucide-react";
 
 export default function LoginPage() {
@@ -23,14 +23,19 @@ export default function LoginPage() {
   useEffect(() => {
     setIsClient(true);
     // Initialize data in localStorage if it doesn't exist
-    if (typeof window !== 'undefined' && !localStorage.getItem('employees')) {
-      localStorage.setItem('employees', JSON.stringify(initialEmployees));
-    }
-    if (typeof window !== 'undefined' && !localStorage.getItem('leaveRequests')) {
-      localStorage.setItem('leaveRequests', JSON.stringify([]));
-    }
-    if (typeof window !== 'undefined' && !localStorage.getItem('attendanceData')) {
-        localStorage.setItem('attendanceData', JSON.stringify(initialAttendanceData));
+    if (typeof window !== 'undefined') {
+      if (!localStorage.getItem('employees')) {
+        localStorage.setItem('employees', JSON.stringify(initialEmployees));
+      }
+      if (!localStorage.getItem('leaveRequests')) {
+        localStorage.setItem('leaveRequests', JSON.stringify([]));
+      }
+      if (!localStorage.getItem('messages')) {
+        localStorage.setItem('messages', JSON.stringify(sampleMessages));
+      }
+      if (!localStorage.getItem('attendanceData')) {
+          localStorage.setItem('attendanceData', JSON.stringify(initialAttendanceData));
+      }
     }
   }, []);
 

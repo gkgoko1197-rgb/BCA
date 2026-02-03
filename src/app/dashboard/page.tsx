@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import type { Employee, LeaveRequest } from "@/lib/data";
+import type { Employee, LeaveRequest, Message } from "@/lib/data";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,6 +20,8 @@ export default function PersonalInfoPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<Employee>>({});
   const [leaveMessage, setLeaveMessage] = useState("");
+  const [generalMailSubject, setGeneralMailSubject] = useState("");
+  const [generalMailBody, setGeneralMailBody] = useState("");
   const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
 
@@ -97,8 +99,29 @@ export default function PersonalInfoPage() {
 
     toast({ title: "Leave Request Sent", description: "Your request has been sent to the admin." });
     setLeaveMessage("");
-    // We would need to find a way to close the dialog programmatically.
-    // For now, relying on DialogClose
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  const handleSendGeneralMail = () => {
+    if (!generalMailSubject.trim() || !generalMailBody.trim()) {
+        toast({ variant: "destructive", title: "Error", description: "Subject and message cannot be empty." });
+        return;
+    }
+    const messages: Message[] = JSON.parse(localStorage.getItem("messages") || "[]");
+    const newMessage: Message = {
+        id: `msg-${Date.now()}`,
+        employeeName: employee!.name,
+        subject: generalMailSubject,
+        body: generalMailBody,
+        date: new Date().toLocaleDateString()
+    };
+    const updatedMessages = [newMessage, ...messages];
+    localStorage.setItem("messages", JSON.stringify(updatedMessages));
+    
+    toast({ title: "Mail Sent", description: "Your message has been sent to the admin." });
+    setGeneralMailSubject("");
+    setGeneralMailBody("");
+    window.dispatchEvent(new Event('storage'));
   };
 
   const getAvatar = (emp: Employee) => {
@@ -201,31 +224,66 @@ export default function PersonalInfoPage() {
                 </div>
             </CardContent>
             <CardFooter className="flex justify-between">
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button variant="outline"><Mail className="mr-2 h-4 w-4" /> Leave Mail</Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Compose Leave Request</DialogTitle>
-                            <DialogDescription>Your message will be sent to the admin for approval.</DialogDescription>
-                        </DialogHeader>
-                        <Textarea 
-                            placeholder="Type your leave request here..." 
-                            rows={6}
-                            value={leaveMessage}
-                            onChange={(e) => setLeaveMessage(e.target.value)}
-                        />
-                        <DialogFooter>
-                            <DialogClose asChild>
-                                <Button variant="ghost">Cancel</Button>
-                            </DialogClose>
-                            <DialogClose asChild>
-                                <Button onClick={handleSendLeaveRequest}>Send Leave Permission Request</Button>
-                            </DialogClose>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                <div className="flex gap-2">
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="outline"><Mail className="mr-2 h-4 w-4" /> Leave Mail</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Compose Leave Request</DialogTitle>
+                                <DialogDescription>Your message will be sent to the admin for approval.</DialogDescription>
+                            </DialogHeader>
+                            <Textarea 
+                                placeholder="Type your leave request here..." 
+                                rows={6}
+                                value={leaveMessage}
+                                onChange={(e) => setLeaveMessage(e.target.value)}
+                            />
+                            <DialogFooter>
+                                <DialogClose asChild>
+                                    <Button variant="ghost">Cancel</Button>
+                                </DialogClose>
+                                <DialogClose asChild>
+                                    <Button onClick={handleSendLeaveRequest}>Send Leave Permission Request</Button>
+                                </DialogClose>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="outline"><Mail className="mr-2 h-4 w-4" /> General Mail</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Compose General Mail</DialogTitle>
+                                <DialogDescription>Your message will be sent to the admin.</DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <Input
+                                    id="subject"
+                                    placeholder="Subject"
+                                    value={generalMailSubject}
+                                    onChange={(e) => setGeneralMailSubject(e.target.value)}
+                                />
+                                <Textarea 
+                                    placeholder="Type your message here..." 
+                                    rows={5}
+                                    value={generalMailBody}
+                                    onChange={(e) => setGeneralMailBody(e.target.value)}
+                                />
+                            </div>
+                            <DialogFooter>
+                                <DialogClose asChild>
+                                    <Button variant="ghost">Cancel</Button>
+                                </DialogClose>
+                                <DialogClose asChild>
+                                    <Button onClick={handleSendGeneralMail}>Send</Button>
+                                </DialogClose>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </div>
                 
                 {isEditing ? (
                     <Button onClick={handleSave}><Save className="mr-2 h-4 w-4" /> Save Changes</Button>
