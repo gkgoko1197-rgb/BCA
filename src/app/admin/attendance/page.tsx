@@ -116,7 +116,7 @@ export default function AdminAttendancePage() {
             </header>
 
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 p-6">
-                <main className="lg:col-span-3 bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+                <main className="lg:col-span-3 bg-white p-4 sm:p-6 rounded-lg shadow-lg flex flex-col">
                     <div className="flex items-center justify-between pb-4">
                         <h2 className="text-2xl sm:text-3xl font-bold text-orange-500">{format(currentDate, 'MMMM')}</h2>
                         <div className="flex items-center gap-2">
@@ -132,13 +132,16 @@ export default function AdminAttendancePage() {
                     <Calendar
                         month={currentDate}
                         onMonthChange={setCurrentDate}
-                        className="w-full"
+                        className="w-full flex-1 flex flex-col"
                         classNames={{
                             caption: "hidden", // We have our own header
+                            month: "flex flex-col flex-1",
+                            table: "flex flex-col flex-1",
+                            tbody: "flex flex-col flex-1",
                             head_row: "flex justify-around mb-2",
                             head_cell: "text-gray-500 uppercase font-semibold text-xs w-full pb-2 text-center",
-                            row: 'flex w-full justify-around border-t',
-                            cell: cn('h-20 sm:h-24 md:h-28 w-full relative border-l first:border-l-0'),
+                            row: 'flex w-full justify-around border-t flex-1',
+                            cell: cn('w-full relative border-l first:border-l-0'),
                             day: 'w-full h-full',
                             day_today: 'bg-orange-100',
                             day_selected: 'bg-primary/20 text-primary-foreground',
