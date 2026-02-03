@@ -120,7 +120,7 @@ export default function PayslipPage() {
                     <CardTitle className="text-2xl">Payslip for {payslipData.monthYear}</CardTitle>
                     <CardDescription>Review your salary details for the current month.</CardDescription>
                 </div>
-                <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download Payslip</Button>
+                <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download</Button>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
                 <div className="grid md:grid-cols-2 gap-6 text-sm">
