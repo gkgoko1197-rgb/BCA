@@ -6,8 +6,8 @@ import { ModeToggle } from '@/components/theme-toggle';
 
 
 export const metadata: Metadata = {
-  title: 'Employee Central Hub',
-  description: 'An employee management system.',
+  title: 'HR STREAM',
+  description: 'Your streamlined HR management solution.',
 };
 
 export default function RootLayout({

@@ -78,7 +78,7 @@ export default function LoginPage() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="flex items-center gap-2 mb-8">
         <LogIn className="h-8 w-8 text-primary"/>
-        <h1 className="text-3xl font-bold text-foreground">Employee Central Hub</h1>
+        <h1 className="text-3xl font-bold text-foreground">HR STREAM</h1>
       </div>
       <Tabs defaultValue="user" className="w-full max-w-md">
         <TabsList className="grid w-full grid-cols-2">
