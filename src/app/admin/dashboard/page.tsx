@@ -305,7 +305,7 @@ export default function AdminEmployeePage() {
     return content;
   };
 
-  const handleDownload = (format: "PDF" | "TXT") => {
+  const handleDownload = () => {
     if (!selectedEmployeeForPayslip || !payslipData) {
         toast({
             variant: "destructive",
@@ -320,7 +320,7 @@ export default function AdminEmployeePage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `Payslip-${selectedEmployeeForPayslip.employeeId}-${payslipData.monthYear}.${format.toLowerCase()}`;
+    link.download = `Payslip-${selectedEmployeeForPayslip.employeeId}-${payslipData.monthYear}.txt`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -328,7 +328,7 @@ export default function AdminEmployeePage() {
 
     toast({
       title: "Download Started",
-      description: `Payslip has been downloaded as a ${format} file.`,
+      description: `Payslip has been downloaded as a TXT file.`,
     });
   };
 
@@ -614,13 +614,9 @@ export default function AdminEmployeePage() {
               </div>
             ) : (
               <div className="flex gap-2">
-                  <Button onClick={() => handleDownload("PDF")}>
+                  <Button onClick={handleDownload}>
                   <Download className="mr-2 h-4 w-4" />
-                  PDF
-                  </Button>
-                  <Button onClick={() => handleDownload("TXT")} variant="outline">
-                  <Download className="mr-2 h-4 w-4" />
-                  TXT
+                  Download
                   </Button>
                   <Button variant="secondary" onClick={() => setIsPayslipEditing(true)}>
                       <Pencil className="mr-2 h-4 w-4" />

@@ -2,11 +2,10 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-import { Download, Building, User, Calendar, FileText, Banknote, Shield, Scissors, BarChart, Check, Signature } from "lucide-react";
+import { Download, Building, User, Calendar, Banknote, Scissors, BarChart, Check, Signature } from "lucide-react";
 import type { Employee } from "@/lib/data";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { generatePayslipDataForEmployee, type DetailedPayslipData } from "@/lib/payslip";
 
@@ -81,7 +80,7 @@ export default function PayslipPage() {
         return content;
     };
 
-    const handleDownload = (format: 'PDF' | 'TXT') => {
+    const handleDownload = () => {
         if (!employee || !payslipData) {
             toast({
                 variant: "destructive",
@@ -96,7 +95,7 @@ export default function PayslipPage() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `Payslip-${employee.employeeId}-${payslipData.monthYear}.${format.toLowerCase()}`;
+        link.download = `Payslip-${employee.employeeId}-${payslipData.monthYear}.txt`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -104,7 +103,7 @@ export default function PayslipPage() {
         
         toast({
             title: "Download Started",
-            description: `Your payslip has been downloaded as a ${format} file.`,
+            description: `Your payslip has been downloaded as a TXT file.`,
         });
     };
 
@@ -121,21 +120,7 @@ export default function PayslipPage() {
                     <CardTitle className="text-2xl">Payslip for {payslipData.monthYear}</CardTitle>
                     <CardDescription>Review your salary details for the current month.</CardDescription>
                 </div>
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button><Download className="mr-2 h-4 w-4" /> Download Payslip</Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Download Options</DialogTitle>
-                            <DialogDescription>Choose the format for your download.</DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter className="sm:justify-center gap-2">
-                             <Button onClick={() => handleDownload('PDF')}><FileText className="mr-2 h-4 w-4"/>Download as PDF</Button>
-                             <Button onClick={() => handleDownload('TXT')} variant="outline"><FileText className="mr-2 h-4 w-4"/>Download as TXT</Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download Payslip</Button>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
                 <div className="grid md:grid-cols-2 gap-6 text-sm">
