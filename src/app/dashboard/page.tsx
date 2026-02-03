@@ -13,12 +13,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Mail, Edit, Save, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Mail, CheckCircle, XCircle, Clock } from "lucide-react";
 
 export default function PersonalInfoPage() {
   const [employee, setEmployee] = useState<Employee | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState<Partial<Employee>>({});
   const [leaveMessage, setLeaveMessage] = useState("");
   const [generalMailSubject, setGeneralMailSubject] = useState("");
   const [generalMailBody, setGeneralMailBody] = useState("");
@@ -33,7 +31,6 @@ export default function PersonalInfoPage() {
       const currentEmployee = employees.find((emp) => emp.id === employeeId);
       if (currentEmployee) {
         setEmployee(currentEmployee);
-        setFormData(currentEmployee);
       }
     }
   }, []);
@@ -56,24 +53,6 @@ export default function PersonalInfoPage() {
       window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSave = () => {
-    if (employee) {
-      const employees: Employee[] = JSON.parse(localStorage.getItem("employees") || "[]");
-      const updatedEmployee = { ...employee, ...formData };
-      const updatedEmployees = employees.map((emp) =>
-        emp.id === employee.id ? updatedEmployee : emp
-      );
-      localStorage.setItem("employees", JSON.stringify(updatedEmployees));
-      setEmployee(updatedEmployee);
-      setIsEditing(false);
-      toast({ title: "Success", description: "Personal information updated." });
-    }
-  };
   
   const handleSendLeaveRequest = () => {
     if (!leaveMessage.trim()) {
@@ -164,14 +143,10 @@ export default function PersonalInfoPage() {
 
   if (!isClient || !employee) return <div>Loading employee data...</div>;
 
-  const InfoField = ({ label, name, value }: { label: string; name: keyof Employee; value: string }) => (
+  const InfoField = ({ label, value }: { label: string; value: string }) => (
     <div className="grid grid-cols-3 items-center gap-4">
-      <Label htmlFor={name} className="text-right text-muted-foreground">{label}</Label>
-      {isEditing ? (
-        <Input id={name} name={name} value={formData[name] as string || ""} onChange={handleInputChange} className="col-span-2" />
-      ) : (
-        <p className="col-span-2 font-medium">{value}</p>
-      )}
+      <Label className="text-right text-muted-foreground">{label}</Label>
+      <p className="col-span-2 font-medium">{value}</p>
     </div>
   );
 
@@ -180,7 +155,7 @@ export default function PersonalInfoPage() {
         <Card className="relative">
             <CardHeader>
                 <CardTitle>Personal Information</CardTitle>
-                <CardDescription>View and manage your personal details.</CardDescription>
+                <CardDescription>View your personal details.</CardDescription>
                 {employee.leaveStatus && renderStatusSeal()}
             </CardHeader>
             <CardContent className="grid md:grid-cols-[180px_1fr] gap-8 items-start">
@@ -190,40 +165,21 @@ export default function PersonalInfoPage() {
                         <AvatarFallback className="text-4xl">{employee.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                      <div className="text-center">
-                        {isEditing ? (
-                            <div className="space-y-2">
-                                <Input
-                                    name="name"
-                                    className="text-center text-xl font-bold"
-                                    value={formData.name || ""}
-                                    onChange={handleInputChange}
-                                />
-                                <Input
-                                    name="designation"
-                                    className="text-center"
-                                    value={formData.designation || ""}
-                                    onChange={handleInputChange}
-                                />
-                            </div>
-                        ) : (
-                            <>
-                                <p className="text-xl font-bold">{employee.name}</p>
-                                <p className="text-muted-foreground">{employee.designation}</p>
-                            </>
-                        )}
+                        <p className="text-xl font-bold">{employee.name}</p>
+                        <p className="text-muted-foreground">{employee.designation}</p>
                     </div>
                 </div>
 
                 <div className="space-y-4 pt-2">
-                    <InfoField label="Employee ID" name="employeeId" value={employee.employeeId} />
-                    <InfoField label="Email ID" name="email" value={employee.email} />
-                    <InfoField label="Phone Number" name="phone" value={employee.phone} />
-                    <InfoField label="Date of Joining" name="joiningDate" value={employee.joiningDate} />
-                    <InfoField label="Date of Birth" name="dob" value={employee.dob} />
-                    <InfoField label="Address" name="address" value={employee.address} />
+                    <InfoField label="Employee ID" value={employee.employeeId} />
+                    <InfoField label="Email ID" value={employee.email} />
+                    <InfoField label="Phone Number" value={employee.phone} />
+                    <InfoField label="Date of Joining" value={employee.joiningDate} />
+                    <InfoField label="Date of Birth" value={employee.dob} />
+                    <InfoField label="Address" value={employee.address} />
                 </div>
             </CardContent>
-            <CardFooter className="flex justify-between">
+            <CardFooter className="flex justify-start">
                 <div className="flex gap-2">
                     <Dialog>
                         <DialogTrigger asChild>
@@ -284,12 +240,6 @@ export default function PersonalInfoPage() {
                         </DialogContent>
                     </Dialog>
                 </div>
-                
-                {isEditing ? (
-                    <Button onClick={handleSave}><Save className="mr-2 h-4 w-4" /> Save Changes</Button>
-                ) : (
-                    <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4" /> Edit Info</Button>
-                )}
             </CardFooter>
         </Card>
     </div>

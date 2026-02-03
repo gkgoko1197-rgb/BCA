@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Employee } from "@/lib/data";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Edit, FileText, Download, Building, User, Calendar, Banknote, Scissors, BarChart, Check, Signature } from "lucide-react";
+import { ArrowUpDown, FileText, Download, Building, User, Banknote, Scissors } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -31,8 +31,6 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { generatePayslipDataForEmployee, type DetailedPayslipData } from "@/lib/payslip";
@@ -49,11 +47,6 @@ export default function AdminEmployeePage() {
     setSelectedEmployeeForPayslip,
   ] = useState<Employee | null>(null);
   const [payslipData, setPayslipData] = useState<DetailedPayslipData | null>(null);
-  const [
-    selectedEmployeeForEdit,
-    setSelectedEmployeeForEdit,
-  ] = useState<Employee | null>(null);
-  const [editFormData, setEditFormData] = useState<Partial<Employee>>({});
   const { toast } = useToast();
 
   useEffect(() => {
@@ -115,33 +108,6 @@ export default function AdminEmployeePage() {
     const data = generatePayslipDataForEmployee(employee);
     setPayslipData(data);
     setSelectedEmployeeForPayslip(employee);
-  };
-
-  const handleOpenEdit = (employee: Employee) => {
-    setSelectedEmployeeForEdit(employee);
-    setEditFormData(employee);
-  };
-
-  const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
-  };
-
-  const handleSaveChanges = () => {
-    if (!selectedEmployeeForEdit) return;
-
-    const updatedEmployees = employees.map((emp) =>
-      emp.id === selectedEmployeeForEdit.id ? { ...emp, ...editFormData } : emp
-    );
-
-    setEmployees(updatedEmployees);
-    localStorage.setItem("employees", JSON.stringify(updatedEmployees));
-
-    toast({
-      title: "Employee Updated",
-      description: `${editFormData.name}'s information has been successfully updated.`,
-    });
-
-    setSelectedEmployeeForEdit(null);
   };
 
   const handleDownload = (format: "PDF" | "TXT") => {
@@ -214,13 +180,6 @@ export default function AdminEmployeePage() {
                       >
                         <FileText className="mr-2 h-4 w-4" /> Payslip
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpenEdit(employee)}
-                      >
-                        <Edit className="mr-2 h-4 w-4" /> Edit
-                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -286,20 +245,7 @@ export default function AdminEmployeePage() {
               Net Salary: {formatCurrency(payslipData?.netSalary || 0)}
             </div>
           </div>
-          <DialogFooter className="sm:justify-between">
-            <div>
-                 <Button
-                    variant="outline"
-                    onClick={() => {
-                    if (selectedEmployeeForPayslip) {
-                        handleOpenEdit(selectedEmployeeForPayslip);
-                        setSelectedEmployeeForPayslip(null);
-                    }
-                    }}
-                >
-                    <Edit className="mr-2 h-4 w-4" /> Edit Employee
-                </Button>
-            </div>
+          <DialogFooter className="sm:justify-end">
             <div className="flex gap-2">
                 <Button onClick={() => handleDownload("PDF")}>
                 <Download className="mr-2 h-4 w-4" />
@@ -313,79 +259,6 @@ export default function AdminEmployeePage() {
                 <Button variant="ghost">Close</Button>
                 </DialogClose>
             </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Dialog */}
-      <Dialog
-        open={!!selectedEmployeeForEdit}
-        onOpenChange={(isOpen) => !isOpen && setSelectedEmployeeForEdit(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Employee: {selectedEmployeeForEdit?.name}</DialogTitle>
-            <DialogDescription>
-              Make changes to the employee's details. Click save when you're
-              done.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
-              </Label>
-              <Input
-                id="name"
-                name="name"
-                value={editFormData.name || ""}
-                onChange={handleEditFormChange}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="designation" className="text-right">
-                Designation
-              </Label>
-              <Input
-                id="designation"
-                name="designation"
-                value={editFormData.designation || ""}
-                onChange={handleEditFormChange}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">
-                Email
-              </Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={editFormData.email || ""}
-                onChange={handleEditFormChange}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="phone" className="text-right">
-                Phone
-              </Label>
-              <Input
-                id="phone"
-                name="phone"
-                value={editFormData.phone || ""}
-                onChange={handleEditFormChange}
-                className="col-span-3"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button onClick={handleSaveChanges}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
