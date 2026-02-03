@@ -74,7 +74,7 @@ export default function AdminAttendancePage() {
 
         return (
             <div 
-                className={cn("relative w-full h-full flex flex-col items-center p-1 pt-2", isOutsideMonth ? 'cursor-default' : 'cursor-pointer hover:bg-accent/50')} 
+                className={cn("relative w-full h-full flex flex-col items-center p-1 pt-2", isOutsideMonth ? 'cursor-default' : 'cursor-pointer hover:bg-gray-800/60')} 
                 onClick={() => openAttendanceDialog(date)}
             >
                 <span className={cn("font-medium", isOutsideMonth && "opacity-50")}>{format(date, 'd')}</span>
@@ -116,7 +116,7 @@ export default function AdminAttendancePage() {
             </header>
 
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 p-6">
-                <main className="lg:col-span-3 bg-white p-4 sm:p-6 rounded-lg shadow-lg flex flex-col">
+                <main className="lg:col-span-3 bg-black p-4 sm:p-6 rounded-lg shadow-lg flex flex-col">
                     <div className="flex items-center justify-between pb-4">
                         <h2 className="text-2xl sm:text-3xl font-bold text-orange-500">{format(currentDate, 'MMMM')}</h2>
                         <div className="flex items-center gap-2">
@@ -138,14 +138,14 @@ export default function AdminAttendancePage() {
                             months: 'h-full',
                             month: 'h-full flex flex-col',
                             table: 'w-full border-collapse h-full',
-                            head_cell: "text-gray-500 uppercase font-semibold text-xs text-center p-2",
+                            head_cell: "text-gray-400 uppercase font-semibold text-xs text-center p-2",
                             tbody: 'h-full',
-                            row: 'border-t h-1/6', // h-1/6 of tbody for each row
-                            cell: cn('p-0 border-l first:border-l-0'),
-                            day: 'w-full h-full',
-                            day_today: 'bg-orange-100',
+                            row: 'border-t border-gray-700 h-1/6',
+                            cell: cn('p-0 border-l border-gray-700 first:border-l-0'),
+                            day: 'w-full h-full text-white',
+                            day_today: 'bg-orange-100 text-black',
                             day_selected: 'bg-primary/20 text-primary-foreground',
-                            day_outside: 'text-muted-foreground opacity-50'
+                            day_outside: 'text-gray-500 opacity-50'
                         }}
                         showOutsideDays
                         components={{
