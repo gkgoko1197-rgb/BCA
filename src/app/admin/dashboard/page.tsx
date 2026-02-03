@@ -257,18 +257,80 @@ export default function AdminEmployeePage() {
     setIsPayslipEditing(false);
   };
 
-  const handleDownload = (format: "PDF" | "TXT") => {
-    toast({
-      title: "Download Started",
-      description: `Payslip will be downloaded as a ${format} file. (This is a demo)`,
-    });
-  };
-
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
     }).format(amount);
+
+  const generatePayslipText = (employee: Employee, payslip: DetailedPayslipData): string => {
+    let content = `----------------------------------------\n`;
+    content += `         PAYSLIP - ${payslip.monthYear}\n`;
+    content += `----------------------------------------\n\n`;
+
+    content += `COMPANY DETAILS\n`;
+    content += `Name: ${payslip.company.name}\n`;
+    content += `Address: ${payslip.company.address}\n\n`;
+
+    content += `EMPLOYEE DETAILS\n`;
+    content += `Name: ${employee.name}\n`;
+    content += `Employee ID: ${employee.employeeId}\n`;
+    content += `Designation: ${employee.designation}\n`;
+    content += `Joining Date: ${employee.joiningDate}\n\n`;
+
+    content += `----------------------------------------\n`;
+    content += `           EARNINGS\n`;
+    content += `----------------------------------------\n`;
+    payslip.earnings.forEach(item => {
+        content += `${item.label.padEnd(25)}: ${formatCurrency(item.amount).padStart(15)}\n`;
+    });
+    content += `----------------------------------------\n`;
+    content += `${'Gross Salary'.padEnd(25)}: ${formatCurrency(payslip.totalEarnings).padStart(15)}\n`;
+    content += `----------------------------------------\n\n`;
+    
+    content += `----------------------------------------\n`;
+    content += `           DEDUCTIONS\n`;
+    content += `----------------------------------------\n`;
+    payslip.deductions.forEach(item => {
+        content += `${item.label.padEnd(25)}: ${formatCurrency(item.amount).padStart(15)}\n`;
+    });
+    content += `----------------------------------------\n`;
+    content += `${'Total Deductions'.padEnd(25)}: ${formatCurrency(payslip.totalDeductions).padStart(15)}\n`;
+    content += `----------------------------------------\n\n`;
+
+    content += `NET SALARY: ${formatCurrency(payslip.netSalary)}\n\n`;
+    
+    content += `----------------------------------------\n`;
+
+    return content;
+  };
+
+  const handleDownload = (format: "PDF" | "TXT") => {
+    if (!selectedEmployeeForPayslip || !payslipData) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "No employee or payslip data available to download.",
+        });
+        return;
+    }
+
+    const payslipText = generatePayslipText(selectedEmployeeForPayslip, payslipData);
+    const blob = new Blob([payslipText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Payslip-${selectedEmployeeForPayslip.employeeId}-${payslipData.monthYear}.${format.toLowerCase()}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Download Started",
+      description: `Payslip has been downloaded as a ${format} file.`,
+    });
+  };
 
   const handleNewEmployeeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;

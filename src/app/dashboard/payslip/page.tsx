@@ -27,10 +27,84 @@ export default function PayslipPage() {
         }
     }, []);
 
+    const formatCurrency = (amount: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
+
+    const generatePayslipText = (employee: Employee, payslip: DetailedPayslipData): string => {
+        let content = `========================================\n`;
+        content += `    PAYSLIP FOR ${payslip.monthYear}\n`;
+        content += `========================================\n\n`;
+
+        content += `--- Employer Information ---\n`;
+        content += `Company: ${payslip.company.name}\n`;
+        content += `Address: ${payslip.company.address}\n\n`;
+
+        content += `--- Employee Information ---\n`;
+        content += `Name: ${employee.name}\n`;
+        content += `Employee ID: ${employee.employeeId}\n`;
+        content += `Designation: ${employee.designation}\n`;
+        content += `Date of Joining: ${employee.joiningDate}\n\n`;
+
+        content += `--- Attendance Summary ---\n`;
+        content += `Total Working Days: ${payslip.attendance.totalDays}\n`;
+        content += `Days Present: ${payslip.attendance.present}\n`;
+        content += `Loss of Pay Days: ${payslip.attendance.lop}\n\n`;
+
+        content += `========================================\n`;
+        content += `           EARNINGS\n`;
+        content += `========================================\n`;
+        payslip.earnings.forEach(item => {
+            content += `${item.label.padEnd(25)}: ${formatCurrency(item.amount).padStart(15)}\n`;
+        });
+        content += `----------------------------------------\n`;
+        content += `${'Gross Salary'.padEnd(25)}: ${formatCurrency(payslip.totalEarnings).padStart(15)}\n`;
+        content += `========================================\n\n`;
+
+        content += `========================================\n`;
+        content += `           DEDUCTIONS\n`;
+        content += `========================================\n`;
+        payslip.deductions.forEach(item => {
+            content += `${item.label.padEnd(25)}: ${formatCurrency(item.amount).padStart(15)}\n`;
+        });
+        content += `----------------------------------------\n`;
+        content += `${'Total Deductions'.padEnd(25)}: ${formatCurrency(payslip.totalDeductions).padStart(15)}\n`;
+        content += `========================================\n\n`;
+
+        content += `--- SALARY SUMMARY ---\n`;
+        content += `Net Salary: ${formatCurrency(payslip.netSalary)}\n\n`;
+
+        content += `--- PAYMENT DETAILS ---\n`;
+        content += `Salary Credit Date: ${payslip.payment.date}\n`;
+        content += `Bank: ${payslip.payment.bank}, A/C: ${payslip.payment.account}\n\n`;
+
+        content += `This is a system-generated payslip.\n`;
+
+        return content;
+    };
+
     const handleDownload = (format: 'PDF' | 'TXT') => {
+        if (!employee || !payslipData) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Payslip data not available.",
+            });
+            return;
+        }
+
+        const payslipText = generatePayslipText(employee, payslipData);
+        const blob = new Blob([payslipText], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Payslip-${employee.employeeId}-${payslipData.monthYear}.${format.toLowerCase()}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
         toast({
             title: "Download Started",
-            description: `Your payslip will be downloaded as a ${format} file. (This is a demo)`,
+            description: `Your payslip has been downloaded as a ${format} file.`,
         });
     };
 
@@ -39,7 +113,6 @@ export default function PayslipPage() {
     }
     
     const { totalEarnings, totalDeductions, netSalary } = payslipData;
-    const formatCurrency = (amount: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
 
     return (
         <Card className="w-full max-w-4xl mx-auto">
