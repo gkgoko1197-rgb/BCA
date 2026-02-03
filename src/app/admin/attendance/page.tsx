@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -97,7 +96,7 @@ export default function AdminAttendancePage() {
                  <div
                     key={day.toString()}
                     className={cn(
-                    "border-b border-r border-gray-200 p-2 flex flex-col items-start justify-start gap-2",
+                    "border-b border-r border-gray-200 p-2 flex flex-col items-start justify-start gap-1",
                     !isCurrentMonth && "bg-muted/50 text-muted-foreground"
                     )}
                 >
@@ -108,21 +107,15 @@ export default function AdminAttendancePage() {
                         {format(day, "d")}
                     </time>
                     {record && isCurrentMonth && (
-                        <div className="flex items-center justify-center gap-2 text-xs w-full">
-                            <span className="flex items-center gap-1">
-                                <div className="h-2 w-2 rounded-full bg-green-500" />
-                                <span>{record.present}</span>
-                            </span>
-                            <span className="flex items-center gap-1">
-                                <div className="h-2 w-2 rounded-full bg-red-500" />
-                                <span>{record.absent}</span>
-                            </span>
+                        <div className="flex items-center justify-start gap-1 pt-1">
+                            {record.present > 0 && <div className="h-2 w-2 rounded-full bg-green-500" />}
+                            {record.absent > 0 && <div className="h-2 w-2 rounded-full bg-red-500" />}
                         </div>
                     )}
                 </div>
             );
 
-            if (record && record.absent > 0 && isCurrentMonth) {
+            if (record && isCurrentMonth) {
                 return (
                     <TooltipProvider key={dateKey} delayDuration={100}>
                         <Tooltip>
@@ -130,10 +123,17 @@ export default function AdminAttendancePage() {
                                 {dayContent}
                             </TooltipTrigger>
                             <TooltipContent>
-                                <p className="font-semibold">Absent Employees:</p>
-                                <ul className="list-disc list-inside">
-                                    {record.absentIds.map(id => <li key={id}>{id}</li>)}
-                                </ul>
+                                <p className="font-semibold">{format(day, "PPP")}</p>
+                                {record.absent > 0 ? (
+                                    <>
+                                        <p className="font-semibold mt-2">Absent Employees:</p>
+                                        <ul className="list-disc list-inside">
+                                            {record.absentIds.map(id => <li key={id}>{id}</li>)}
+                                        </ul>
+                                    </>
+                                ) : (
+                                    <p className="mt-2 text-muted-foreground">No absences recorded.</p>
+                                )}
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
