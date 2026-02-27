@@ -41,8 +41,8 @@ export default function LoginPage() {
 
   const handleUserLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (userUsername === "GOKO" && userPassword === "GOKO") {
-      const employee = initialEmployees.find(emp => emp.name.split(' ')[0].toUpperCase() === 'GOKO');
+    if (userUsername === "user" && userPassword === "password") {
+      const employee = initialEmployees[0];
       if (employee && isClient) {
         localStorage.setItem("employeeId", employee.id);
         localStorage.removeItem("isAdmin");
@@ -59,7 +59,7 @@ export default function LoginPage() {
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (adminId === "1" && adminPassword === "GOKO") {
+    if (adminId === "admin" && adminPassword === "password") {
       if (isClient) {
         localStorage.setItem("isAdmin", "true");
         localStorage.removeItem("employeeId");
@@ -95,11 +95,11 @@ export default function LoginPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="user-username">Username</Label>
-                  <Input id="user-username" placeholder="GOKO" required value={userUsername} onChange={(e) => setUserUsername(e.target.value)} />
+                  <Input id="user-username" placeholder="user" required value={userUsername} onChange={(e) => setUserUsername(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="user-password">Password</Label>
-                  <Input id="user-password" type="password" placeholder="GOKO" required value={userPassword} onChange={(e) => setUserPassword(e.target.value)} />
+                  <Input id="user-password" type="password" placeholder="password" required value={userPassword} onChange={(e) => setUserPassword(e.target.value)} />
                 </div>
               </CardContent>
               <CardFooter>
@@ -118,11 +118,11 @@ export default function LoginPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="admin-id">Admin ID</Label>
-                  <Input id="admin-id" placeholder="1" required value={adminId} onChange={(e) => setAdminId(e.target.value)} />
+                  <Input id="admin-id" placeholder="admin" required value={adminId} onChange={(e) => setAdminId(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="admin-password">Password</Label>
-                  <Input id="admin-password" type="password" placeholder="GOKO" required value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} />
+                  <Input id="admin-password" type="password" placeholder="password" required value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} />
                 </div>
               </CardContent>
               <CardFooter>
