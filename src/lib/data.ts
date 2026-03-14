@@ -7,6 +7,7 @@ export type Employee = {
   employeeId: string;
   designation: string;
   email: string;
+  password: string;
   joiningDate: string;
   dob: string;
   address: string;
@@ -44,6 +45,7 @@ export const initialEmployees: Employee[] = [
     employeeId: "EMP001",
     designation: "Lead Software Engineer",
     email: "goko.vegeta@example.com",
+    password: "password",
     joiningDate: formatDate(new Date("2020-01-15")),
     dob: formatDate(new Date("1990-05-25")),
     address: "123 Saiyan Street, West City",
@@ -70,6 +72,7 @@ export const initialEmployees: Employee[] = [
       employeeId: `EMP${String(id).padStart(4, '0')}`,
       designation: designations[i % designations.length],
       email: email,
+      password: "password",
       joiningDate: formatDate(joiningDate),
       dob: formatDate(dob),
       address: `${124 + i} Galaxy Road, Planet ${i + 1}`,
